@@ -12,11 +12,27 @@ export const Route = createFileRoute("/carte")({
 });
 
 function CartePage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones } = useZones();
   const { items: list } = usePharmacies(zone || null);
-  const withCoords = list.filter((p) => p.latitude != null && p.longitude != null);
+  const loc = useUserLocation();
+  const withCoords = useMemo(
+    () => list.filter((p) => p.latitude != null && p.longitude != null),
+    [list],
+  );
+  const nearestId = useMemo(() => {
+    if (!loc.coords) return null;
+    let best: { id: string; km: number } | null = null;
+    for (const p of withCoords) {
+      const km = haversineKm(loc.coords, {
+        lat: p.latitude as number,
+        lon: p.longitude as number,
+      });
+      if (!best || km < best.km) best = { id: p.id, km };
+    }
+    return best?.id ?? null;
+  }, [loc.coords, withCoords]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
