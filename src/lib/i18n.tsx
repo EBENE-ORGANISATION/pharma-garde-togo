@@ -46,6 +46,18 @@ export const translations: Dict = {
     fr: "Aucune pharmacie de garde disponible pour cette zone pour le moment.",
     en: "No on-duty pharmacy available for this region at the moment.",
   },
+  nearest_pharmacy: { fr: "Pharmacie la plus proche", en: "Nearest pharmacy" },
+  use_my_location: { fr: "Utiliser ma position", en: "Use my location" },
+  locating: { fr: "Localisation…", en: "Locating…" },
+  location_unavailable: {
+    fr: "Position non disponible — activez la localisation pour voir la pharmacie la plus proche.",
+    en: "Location unavailable — enable location to see the nearest pharmacy.",
+  },
+  as_the_crow_flies: {
+    fr: "Distance à vol d'oiseau (approximative).",
+    en: "Straight-line distance (approximate).",
+  },
+  your_position: { fr: "Votre position", en: "Your position" },
   about_text: {
     fr: "PharmaGarde aide à localiser rapidement les pharmacies de garde au Togo, même avec une connexion limitée.",
     en: "PharmaGarde helps you quickly find on-duty pharmacies in Togo, even on a slow connection.",
