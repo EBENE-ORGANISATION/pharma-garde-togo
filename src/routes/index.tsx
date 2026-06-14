@@ -1,19 +1,39 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { Pill, MapPin, Phone, Search, ChevronRight } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { Pill, MapPin, Phone, Search, ChevronRight, Crosshair } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
-import { useZones } from "@/lib/supabase-hooks";
+import { useZones, usePharmacies } from "@/lib/supabase-hooks";
+import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones, loading } = useZones();
+  const { items: pharmacies } = usePharmacies(zone || null);
+  const loc = useUserLocation();
+
+  const nearest = useMemo(() => {
+    if (!loc.coords) return null;
+    const withCoords = pharmacies.filter(
+      (p) => p.latitude != null && p.longitude != null,
+    );
+    if (withCoords.length === 0) return null;
+    let best: { p: (typeof withCoords)[number]; km: number } | null = null;
+    for (const p of withCoords) {
+      const km = haversineKm(loc.coords, {
+        lat: p.latitude as number,
+        lon: p.longitude as number,
+      });
+      if (!best || km < best.km) best = { p, km };
+    }
+    return best;
+  }, [loc.coords, pharmacies]);
 
   // auto-select first zone once loaded if none selected or stored id no longer exists
   useEffect(() => {
