@@ -42,6 +42,10 @@ export const translations: Dict = {
   back: { fr: "Retour", en: "Back" },
   language: { fr: "Langue", en: "Language" },
   loading_map: { fr: "Chargement de la carte…", en: "Loading map…" },
+  no_pharmacies: {
+    fr: "Aucune pharmacie de garde disponible pour cette zone pour le moment.",
+    en: "No on-duty pharmacy available for this region at the moment.",
+  },
   about_text: {
     fr: "PharmaGarde aide à localiser rapidement les pharmacies de garde au Togo, même avec une connexion limitée.",
     en: "PharmaGarde helps you quickly find on-duty pharmacies in Togo, even on a slow connection.",
