@@ -89,22 +89,53 @@ function CartePage() {
       if (layerRef.current) map.removeLayer(layerRef.current);
       const group = L.layerGroup();
       withCoords.forEach((p) => {
-        const marker = L.marker([p.latitude as number, p.longitude as number]);
+        const isNearest = p.id === nearestId;
+        const color = isNearest ? "#16a34a" : "#2f7355";
+        const size = isNearest ? 26 : 20;
+        const html = `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);${isNearest ? "outline:3px solid rgba(34,197,94,.35);" : ""}"></div>`;
+        const icon = L.divIcon({
+          html,
+          className: "",
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        });
+        const km =
+          loc.coords != null
+            ? haversineKm(loc.coords, { lat: p.latitude as number, lon: p.longitude as number })
+            : null;
+        const marker = L.marker([p.latitude as number, p.longitude as number], { icon });
         marker.bindPopup(
-          `<strong>${p.nom}</strong>${p.adresse ? `<br/>${p.adresse}` : ""}${p.telephone ? `<br/><a href="tel:${p.telephone}">${p.telephone}</a>` : ""}`,
+          `<strong>${p.nom}</strong>${km != null ? `<br/><em>${formatKm(km, lang)}</em>` : ""}${p.adresse ? `<br/>${p.adresse}` : ""}${p.telephone ? `<br/><a href="tel:${p.telephone}">${p.telephone}</a>` : ""}`,
         );
         marker.addTo(group);
       });
+
+      if (loc.coords) {
+        const userIcon = L.divIcon({
+          html: `<div style="width:18px;height:18px;border-radius:9999px;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 4px rgba(37,99,235,.25);"></div>`,
+          className: "",
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        });
+        L.marker([loc.coords.lat, loc.coords.lon], { icon: userIcon })
+          .bindPopup(`<strong>${t("your_position")}</strong>`)
+          .addTo(group);
+      }
+
       group.addTo(map);
       layerRef.current = group;
-      if (withCoords.length > 0) {
-        const bounds = L.latLngBounds(
-          withCoords.map((p) => [p.latitude as number, p.longitude as number] as [number, number]),
-        );
+
+      const points: [number, number][] = withCoords.map(
+        (p) => [p.latitude as number, p.longitude as number] as [number, number],
+      );
+      if (loc.coords) points.push([loc.coords.lat, loc.coords.lon]);
+      if (points.length > 0) {
+        const bounds = L.latLngBounds(points);
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
       }
     })();
-  }, [ready, withCoords]);
+  }, [ready, withCoords, loc.coords, nearestId, lang, t]);
+
 
   return (
     <AppShell title={t("map")}>
