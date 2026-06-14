@@ -1,24 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useLang, ZONES } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
-import { PHARMACIES } from "@/lib/data";
+import { usePharmacies, useZones } from "@/lib/supabase-hooks";
 
 export const Route = createFileRoute("/carte")({
   component: CartePage,
 });
 
 function CartePage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { zone, setZone } = useZone();
-  const list = PHARMACIES.filter((p) => p.zone === zone);
+  const { zones } = useZones();
+  const { items: list } = usePharmacies(zone || null);
+  const withCoords = list.filter((p) => p.latitude != null && p.longitude != null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
 
-  // init
+  useEffect(() => {
+    if (zones.length > 0 && (!zone || !zones.find((z) => z.id === zone))) {
+      setZone(zones[0].id);
+    }
+  }, [zones, zone, setZone]);
+
+  // init map
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -26,7 +34,6 @@ function CartePage() {
       const L = (await import("leaflet")).default;
       if (cancelled || !containerRef.current) return;
 
-      // Default icon fix (use CDN)
       const icon = L.icon({
         iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
         iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -61,37 +68,25 @@ function CartePage() {
     (async () => {
       const L = (await import("leaflet")).default;
       const map = mapRef.current;
-      if (layerRef.current) {
-        map.removeLayer(layerRef.current);
-      }
+      if (layerRef.current) map.removeLayer(layerRef.current);
       const group = L.layerGroup();
-      const nearest = list[0];
-      list.forEach((p) => {
-        const isNearest = p.id === nearest?.id;
-        const marker = L.marker([p.lat, p.lng]);
+      withCoords.forEach((p) => {
+        const marker = L.marker([p.latitude as number, p.longitude as number]);
         marker.bindPopup(
-          `<strong>${p.name}</strong><br/>${p.address}<br/><a href="tel:${p.phone}">${p.phone}</a>${isNearest ? `<br/><em>${t("nearest")}</em>` : ""}`,
+          `<strong>${p.nom}</strong>${p.adresse ? `<br/>${p.adresse}` : ""}${p.telephone ? `<br/><a href="tel:${p.telephone}">${p.telephone}</a>` : ""}`,
         );
-        if (isNearest) {
-          L.circleMarker([p.lat, p.lng], {
-            radius: 14,
-            color: "#2f7355",
-            fillColor: "#2f7355",
-            fillOpacity: 0.25,
-            weight: 2,
-          }).addTo(group);
-        }
         marker.addTo(group);
       });
       group.addTo(map);
       layerRef.current = group;
-
-      if (list.length > 0) {
-        const bounds = L.latLngBounds(list.map((p) => [p.lat, p.lng] as [number, number]));
+      if (withCoords.length > 0) {
+        const bounds = L.latLngBounds(
+          withCoords.map((p) => [p.latitude as number, p.longitude as number] as [number, number]),
+        );
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
       }
     })();
-  }, [ready, zone, lang, list, t]);
+  }, [ready, withCoords]);
 
   return (
     <AppShell title={t("map")}>
@@ -101,9 +96,9 @@ function CartePage() {
           onChange={(e) => setZone(e.target.value)}
           className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm font-semibold"
         >
-          {ZONES.map((z) => (
+          {zones.map((z) => (
             <option key={z.id} value={z.id}>
-              {z[lang]}
+              {z.nom}
             </option>
           ))}
         </select>
@@ -120,9 +115,9 @@ function CartePage() {
             </div>
           )}
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          {t("nearest")}: {list[0]?.name ?? "—"}
-        </p>
+        {list.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">{t("no_pharmacies")}</p>
+        )}
       </div>
     </AppShell>
   );
