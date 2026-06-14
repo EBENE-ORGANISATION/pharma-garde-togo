@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UrgencesRouteImport } from './routes/urgences'
 import { Route as MedicamentsRouteImport } from './routes/medicaments'
 import { Route as GardeRouteImport } from './routes/garde'
+import { Route as CarteRouteImport } from './routes/carte'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -30,6 +31,11 @@ const GardeRoute = GardeRouteImport.update({
   path: '/garde',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CarteRoute = CarteRouteImport.update({
+  id: '/carte',
+  path: '/carte',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -44,6 +50,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/carte': typeof CarteRoute
   '/garde': typeof GardeRoute
   '/medicaments': typeof MedicamentsRoute
   '/urgences': typeof UrgencesRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/carte': typeof CarteRoute
   '/garde': typeof GardeRoute
   '/medicaments': typeof MedicamentsRoute
   '/urgences': typeof UrgencesRoute
@@ -59,21 +67,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/carte': typeof CarteRoute
   '/garde': typeof GardeRoute
   '/medicaments': typeof MedicamentsRoute
   '/urgences': typeof UrgencesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/garde' | '/medicaments' | '/urgences'
+  fullPaths: '/' | '/about' | '/carte' | '/garde' | '/medicaments' | '/urgences'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/garde' | '/medicaments' | '/urgences'
-  id: '__root__' | '/' | '/about' | '/garde' | '/medicaments' | '/urgences'
+  to: '/' | '/about' | '/carte' | '/garde' | '/medicaments' | '/urgences'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/carte'
+    | '/garde'
+    | '/medicaments'
+    | '/urgences'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  CarteRoute: typeof CarteRoute
   GardeRoute: typeof GardeRoute
   MedicamentsRoute: typeof MedicamentsRoute
   UrgencesRoute: typeof UrgencesRoute
@@ -102,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GardeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/carte': {
+      id: '/carte'
+      path: '/carte'
+      fullPath: '/carte'
+      preLoaderRoute: typeof CarteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  CarteRoute: CarteRoute,
   GardeRoute: GardeRoute,
   MedicamentsRoute: MedicamentsRoute,
   UrgencesRoute: UrgencesRoute,
