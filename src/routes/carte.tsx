@@ -151,6 +151,24 @@ function CartePage() {
             </option>
           ))}
         </select>
+
+        <div className="mt-3">
+          {!loc.coords ? (
+            <button
+              onClick={loc.request}
+              disabled={loc.status === "loading"}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary-soft px-3 py-2.5 text-sm font-bold text-primary-dark active:scale-[0.98] disabled:opacity-60"
+            >
+              <Crosshair className="h-4 w-4" />
+              {loc.status === "loading" ? t("locating") : t("use_my_location")}
+            </button>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">{t("as_the_crow_flies")}</p>
+          )}
+          {(loc.status === "denied" || loc.status === "unavailable") && (
+            <p className="mt-2 text-xs text-muted-foreground">{t("location_unavailable")}</p>
+          )}
+        </div>
       </div>
       <div className="mt-3 px-4">
         <div
