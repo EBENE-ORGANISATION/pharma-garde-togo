@@ -1,19 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Phone, MapPin } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useLang, ZONES } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
-import { PHARMACIES } from "@/lib/data";
+import { usePharmacies, useZones } from "@/lib/supabase-hooks";
 
 export const Route = createFileRoute("/garde")({
   component: GardePage,
 });
 
 function GardePage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { zone, setZone } = useZone();
-  const list = PHARMACIES.filter((p) => p.zone === zone);
-  const zoneLabel = ZONES.find((z) => z.id === zone)?.[lang] ?? "";
+  const { zones } = useZones();
+  const { items: list, loading } = usePharmacies(zone || null);
+
+  useEffect(() => {
+    if (zones.length > 0 && (!zone || !zones.find((z) => z.id === zone))) {
+      setZone(zones[0].id);
+    }
+  }, [zones, zone, setZone]);
+
+  const zoneLabel = zones.find((z) => z.id === zone)?.nom ?? "";
 
   return (
     <AppShell title={t("on_duty")}>
@@ -26,9 +35,9 @@ function GardePage() {
           onChange={(e) => setZone(e.target.value)}
           className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-3 text-sm font-semibold"
         >
-          {ZONES.map((z) => (
+          {zones.map((z) => (
             <option key={z.id} value={z.id}>
-              {z[lang]}
+              {z.nom}
             </option>
           ))}
         </select>
@@ -43,14 +52,15 @@ function GardePage() {
           <li key={p.id} className="rounded-2xl border border-border bg-card p-4 shadow-card">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="truncate text-base font-bold">{p.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{p.address}</p>
-                <p className="mt-1 text-sm font-mono">{p.phone}</p>
+                <h3 className="truncate text-base font-bold">{p.nom}</h3>
+                {p.adresse && <p className="mt-1 text-sm text-muted-foreground">{p.adresse}</p>}
+                {p.telephone && <p className="mt-1 text-sm font-mono">{p.telephone}</p>}
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <a
-                href={`tel:${p.phone}`}
+                href={p.telephone ? `tel:${p.telephone}` : "#"}
+                aria-disabled={!p.telephone}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground active:scale-[0.98]"
               >
                 <Phone className="h-4 w-4" /> {t("call")}
@@ -64,9 +74,9 @@ function GardePage() {
             </div>
           </li>
         ))}
-        {list.length === 0 && (
+        {!loading && list.length === 0 && (
           <li className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            {t("no_results")}
+            {t("no_pharmacies")}
           </li>
         )}
       </ul>

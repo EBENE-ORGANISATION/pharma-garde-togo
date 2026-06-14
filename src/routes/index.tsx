@@ -1,16 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Pill, MapPin, Phone, Search, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useLang, ZONES } from "@/lib/i18n";
+import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
+import { useZones } from "@/lib/supabase-hooks";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { zone, setZone } = useZone();
+  const { zones, loading } = useZones();
+
+  // auto-select first zone once loaded if none selected or stored id no longer exists
+  useEffect(() => {
+    if (loading || zones.length === 0) return;
+    if (!zone || !zones.find((z) => z.id === zone)) {
+      setZone(zones[0].id);
+    }
+  }, [loading, zones, zone, setZone]);
 
   const tiles = [
     { to: "/garde", label: t("on_duty"), icon: Pill, tone: "primary" as const },
@@ -28,25 +39,31 @@ function Index() {
         <label className="mt-5 block text-xs font-semibold uppercase tracking-wide text-primary-dark/80">
           {t("select_zone")}
         </label>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {ZONES.map((z) => {
-            const active = z.id === zone;
-            return (
-              <button
-                key={z.id}
-                onClick={() => setZone(z.id)}
-                className={
-                  "rounded-xl border px-3 py-3 text-left text-sm font-semibold transition-all " +
-                  (active
-                    ? "border-primary bg-primary text-primary-foreground shadow-soft"
-                    : "border-border bg-background text-foreground hover:border-primary/40")
-                }
-              >
-                {z[lang]}
-              </button>
-            );
-          })}
-        </div>
+        {loading ? (
+          <div className="mt-2 text-sm text-primary-dark/70">…</div>
+        ) : zones.length === 0 ? (
+          <div className="mt-2 text-sm text-primary-dark/70">—</div>
+        ) : (
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {zones.map((z) => {
+              const active = z.id === zone;
+              return (
+                <button
+                  key={z.id}
+                  onClick={() => setZone(z.id)}
+                  className={
+                    "rounded-xl border px-3 py-3 text-left text-sm font-semibold transition-all " +
+                    (active
+                      ? "border-primary bg-primary text-primary-foreground shadow-soft"
+                      : "border-border bg-background text-foreground hover:border-primary/40")
+                  }
+                >
+                  {z.nom}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="px-4 py-6">

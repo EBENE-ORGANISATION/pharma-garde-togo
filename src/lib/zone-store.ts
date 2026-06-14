@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 
-const KEY = "pg_zone";
-const DEFAULT = "grand-lome";
+const KEY = "pg_zone_id";
 
 export function useZone() {
-  const [zone, setZoneState] = useState<string>(DEFAULT);
+  const [zone, setZoneState] = useState<string>("");
   useEffect(() => {
     if (typeof window === "undefined") return;
     const v = localStorage.getItem(KEY);
