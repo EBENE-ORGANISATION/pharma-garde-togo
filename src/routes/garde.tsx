@@ -1,20 +1,37 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { Phone, MapPin } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { Phone, MapPin, Crosshair } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
 import { usePharmacies, useZones } from "@/lib/supabase-hooks";
+import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 
 export const Route = createFileRoute("/garde")({
   component: GardePage,
 });
 
 function GardePage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones } = useZones();
   const { items: list, loading } = usePharmacies(zone || null);
+  const loc = useUserLocation();
+
+  const sorted = useMemo(() => {
+    if (!loc.coords) return list;
+    return [...list].sort((a, b) => {
+      const da =
+        a.latitude != null && a.longitude != null
+          ? haversineKm(loc.coords!, { lat: a.latitude, lon: a.longitude })
+          : Infinity;
+      const db =
+        b.latitude != null && b.longitude != null
+          ? haversineKm(loc.coords!, { lat: b.latitude, lon: b.longitude })
+          : Infinity;
+      return da - db;
+    });
+  }, [list, loc.coords]);
 
   useEffect(() => {
     if (zones.length > 0 && (!zone || !zones.find((z) => z.id === zone))) {
