@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Crosshair } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
 import { usePharmacies, useZones } from "@/lib/supabase-hooks";
+import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 
 export const Route = createFileRoute("/carte")({
   component: CartePage,
