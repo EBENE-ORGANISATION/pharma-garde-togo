@@ -1,3 +1,6 @@
+# Generated data files (scripts/output/)
+scripts/output/
+
 # Logs
 logs
 *.log
