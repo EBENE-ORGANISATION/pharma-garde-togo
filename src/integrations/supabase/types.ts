@@ -14,6 +14,18 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          user_id: string
+        }
+        Insert: {
+          user_id: string
+        }
+        Update: {
+          user_id?: string
+        }
+        Relationships: []
+      }
       medicaments: {
         Row: {
           created_at: string
@@ -238,7 +250,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
+      publier_zone: {
+        Args: { p_zone_id: string }
+        Returns: {
+          data: Json
+          id: string
+          published_at: string
+          semaine: string | null
+          version: number
+          zone_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "snapshots"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
