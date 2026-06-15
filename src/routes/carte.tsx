@@ -52,10 +52,17 @@ function CartePage() {
       const L = (await import("leaflet")).default;
       if (cancelled || !containerRef.current) return;
 
+      const [markerIcon, markerIcon2x, markerShadow] = await Promise.all([
+        import("leaflet/dist/images/marker-icon.png"),
+        import("leaflet/dist/images/marker-icon-2x.png"),
+        import("leaflet/dist/images/marker-shadow.png"),
+      ]);
+      if (cancelled || !containerRef.current) return;
+
       const icon = L.icon({
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconUrl: markerIcon.default,
+        iconRetinaUrl: markerIcon2x.default,
+        shadowUrl: markerShadow.default,
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
