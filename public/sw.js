@@ -34,7 +34,9 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((key) => key.startsWith("pharmagarde-") && key !== CACHE_NAME).map((key) => caches.delete(key)),
+          keys
+            .filter((key) => key.startsWith("pharmagarde-") && key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
         ),
       )
       .then(() => self.clients.claim()),
@@ -57,6 +59,12 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
+  // The admin area requires a live session and is never cached or shown
+  // offline — let it go straight to the network.
+  if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
+    return;
+  }
+
   // Navigations (HTML pages): cache-first, falling back to the cached app
   // shell ("/") for client-side routing, then to a static offline page.
   if (request.mode === "navigate") {
@@ -67,9 +75,7 @@ self.addEventListener("fetch", (event) => {
           return await cacheFirst(request, cache);
         } catch {
           return (
-            (await cache.match("/")) ||
-            (await cache.match("/offline.html")) ||
-            Response.error()
+            (await cache.match("/")) || (await cache.match("/offline.html")) || Response.error()
           );
         }
       })(),
@@ -78,7 +84,8 @@ self.addEventListener("fetch", (event) => {
   }
 
   const sameOrigin = url.origin === self.location.origin;
-  const isStaticAsset = sameOrigin && (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/"));
+  const isStaticAsset =
+    sameOrigin && (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/"));
   const isRuntimeHost = RUNTIME_CACHE_HOSTS.includes(url.hostname);
 
   if (isStaticAsset || isRuntimeHost) {
