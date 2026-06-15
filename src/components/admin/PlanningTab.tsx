@@ -141,10 +141,9 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
         setSaving(null);
         return;
       }
-      const snap = data as { version?: number; published_at?: string } | null;
       setSuccess(
-        `Zone publiée (version ${snap?.version ?? "?"}, ${
-          snap?.published_at ? new Date(snap.published_at).toLocaleString("fr-FR") : ""
+        `Zone publiée (version ${data?.version ?? "?"}, ${
+          data?.published_at ? new Date(data.published_at).toLocaleString("fr-FR") : ""
         }).`,
       );
     } else {
