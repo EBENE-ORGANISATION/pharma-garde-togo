@@ -96,10 +96,12 @@ export type Database = {
           actif: boolean
           adresse: string | null
           created_at: string
+          geo_source: string | null
           id: string
           latitude: number | null
           longitude: number | null
           nom: string
+          slug: string | null
           telephone: string | null
           zone_id: string | null
         }
@@ -107,10 +109,12 @@ export type Database = {
           actif?: boolean
           adresse?: string | null
           created_at?: string
+          geo_source?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           nom: string
+          slug?: string | null
           telephone?: string | null
           zone_id?: string | null
         }
@@ -118,10 +122,12 @@ export type Database = {
           actif?: boolean
           adresse?: string | null
           created_at?: string
+          geo_source?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           nom?: string
+          slug?: string | null
           telephone?: string | null
           zone_id?: string | null
         }
@@ -250,7 +256,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      importer_garde: {
+        Args: { p_a: string; p_de: string; p_slugs: string[] }
+        Returns: {
+          deja_publiees: number
+          inserees: number
+          slugs_inconnus: string[]
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
+      publier_garde_auto: {
+        Args: { p_a: string; p_de: string }
+        Returns: {
+          pharmacies_publiees: number
+          zone: string
+        }[]
+      }
       publier_zone: {
         Args: { p_zone_id: string }
         Returns: {
