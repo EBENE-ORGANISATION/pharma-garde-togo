@@ -50,6 +50,7 @@ class PharmaGardeDB extends Dexie {
   emergencies!: Table<Emergency, string>;
   medicaments!: Table<Medicine, string>;
   snapshots!: Table<ZoneSnapshot, string>;
+  annuaire!: Table<Pharmacy, string>;
   meta!: Table<MetaEntry, string>;
 
   constructor() {
@@ -61,6 +62,9 @@ class PharmaGardeDB extends Dexie {
       medicaments: "id, dci",
       snapshots: "zone_id",
       meta: "key",
+    });
+    this.version(2).stores({
+      annuaire: "id, zone_id",
     });
   }
 }

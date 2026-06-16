@@ -4,8 +4,9 @@ import { Phone, MapPin, Crosshair } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
-import { usePharmacies, useZones } from "@/lib/supabase-hooks";
+import { usePharmacies, useAllPharmacies, useZones } from "@/lib/supabase-hooks";
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
+import { useModeOuverture } from "@/lib/horaires";
 
 export const Route = createFileRoute("/garde")({
   component: GardePage,
@@ -15,7 +16,16 @@ function GardePage() {
   const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones } = useZones();
-  const { items: list, loading } = usePharmacies(zone || null);
+  const { mode, libelle } = useModeOuverture();
+
+  const { items: gardeList, loading: gardeLoading } = usePharmacies(zone || null);
+  const { items: allList, loading: allLoading } = useAllPharmacies(
+    mode === "jour" ? zone || null : null,
+  );
+
+  const list = mode === "jour" ? allList : gardeList;
+  const loading = mode === "jour" ? allLoading : gardeLoading;
+
   const loc = useUserLocation();
 
   const sorted = useMemo(() => {
@@ -40,9 +50,11 @@ function GardePage() {
   }, [zones, zone, setZone]);
 
   const zoneLabel = zones.find((z) => z.id === zone)?.nom ?? "";
+  const title = mode === "jour" ? t("pharmacies_open") : t("on_duty");
+  const listHeader = mode === "jour" ? t("pharmacies_open_in") : t("pharmacies_in");
 
   return (
-    <AppShell title={t("on_duty")}>
+    <AppShell title={title}>
       <div className="px-4 pt-4">
         <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t("zone")}
@@ -77,9 +89,12 @@ function GardePage() {
           )}
         </div>
 
-        <h2 className="mt-5 text-lg font-bold">
-          {t("pharmacies_in")} {zoneLabel}
-        </h2>
+        <div className="mt-5 flex items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold">
+            {listHeader} {zoneLabel}
+          </h2>
+          <span className="shrink-0 text-xs text-muted-foreground">{libelle}</span>
+        </div>
       </div>
 
       <ul className="mt-3 space-y-3 px-4 pb-4">
@@ -106,6 +121,11 @@ function GardePage() {
                 {km != null && (
                   <span className="shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-dark">
                     {formatKm(km, lang)}
+                  </span>
+                )}
+                {loc.coords && km === null && (
+                  <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                    {t("position_unknown")}
                   </span>
                 )}
               </div>

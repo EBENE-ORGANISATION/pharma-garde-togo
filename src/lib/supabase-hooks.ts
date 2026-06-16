@@ -337,3 +337,59 @@ export function useMedicineSearch(q: string) {
   }, [term]);
   return { items, loading };
 }
+
+export function useAllPharmacies(zoneId: string | null) {
+  const [items, setItems] = useState<Pharmacy[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    const db = getDb();
+    if (!zoneId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    (async () => {
+      // 1. cache-first depuis db.annuaire
+      if (db) {
+        try {
+          const cached = await db.annuaire.where("zone_id").equals(zoneId).toArray();
+          if (!cancelled && cached.length > 0) {
+            setItems([...cached].sort(byNom));
+            setLoading(false);
+          }
+        } catch {
+          // ignore cache read errors
+        }
+      }
+
+      // 2. réseau — table pharmacies complète, sans filtrage par snapshot
+      try {
+        const { data } = await supabase
+          .from("pharmacies")
+          .select("id, nom, adresse, telephone, latitude, longitude, zone_id")
+          .eq("actif", true)
+          .eq("zone_id", zoneId)
+          .order("nom", { ascending: true });
+        if (cancelled) return;
+        const fresh = (data ?? []) as Pharmacy[];
+        setItems(fresh);
+        if (db) {
+          await db.transaction("rw", db.annuaire, async () => {
+            await db.annuaire.where("zone_id").equals(zoneId).delete();
+            await db.annuaire.bulkPut(fresh);
+          });
+        }
+      } catch {
+        // offline: conserve le cache déjà affiché
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [zoneId]);
+  return { items, loading };
+}

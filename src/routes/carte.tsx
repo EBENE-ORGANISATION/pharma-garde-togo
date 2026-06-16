@@ -4,8 +4,9 @@ import { Crosshair } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
-import { usePharmacies, useZones } from "@/lib/supabase-hooks";
+import { usePharmacies, useAllPharmacies, useZones } from "@/lib/supabase-hooks";
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
+import { useModeOuverture } from "@/lib/horaires";
 
 export const Route = createFileRoute("/carte")({
   component: CartePage,
@@ -15,7 +16,12 @@ function CartePage() {
   const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones } = useZones();
-  const { items: list } = usePharmacies(zone || null);
+  const { mode, libelle } = useModeOuverture();
+
+  const { items: gardeList } = usePharmacies(zone || null);
+  const { items: allList } = useAllPharmacies(mode === "jour" ? zone || null : null);
+  const list = mode === "jour" ? allList : gardeList;
+
   const loc = useUserLocation();
   const withCoords = useMemo(
     () => list.filter((p) => p.latitude != null && p.longitude != null),
@@ -176,6 +182,8 @@ function CartePage() {
             <p className="mt-2 text-xs text-muted-foreground">{t("location_unavailable")}</p>
           )}
         </div>
+
+        <p className="mt-2 text-xs text-muted-foreground">{libelle}</p>
       </div>
       <div className="mt-3 px-4">
         <div

@@ -58,6 +58,10 @@ export const translations: Dict = {
     en: "Straight-line distance (approximate).",
   },
   your_position: { fr: "Votre position", en: "Your position" },
+  pharmacies_open: { fr: "Pharmacies ouvertes", en: "Open pharmacies" },
+  pharmacies_open_in: { fr: "Pharmacies ouvertes —", en: "Open pharmacies —" },
+  nearest_open: { fr: "Pharmacie ouverte la plus proche", en: "Nearest open pharmacy" },
+  position_unknown: { fr: "Position non renseignée", en: "Location not available" },
   about_text: {
     fr: "PharmaGarde aide à localiser rapidement les pharmacies de garde au Togo, même avec une connexion limitée.",
     en: "PharmaGarde helps you quickly find on-duty pharmacies in Togo, even on a slow connection.",

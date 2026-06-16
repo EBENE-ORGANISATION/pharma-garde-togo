@@ -4,8 +4,9 @@ import { Pill, MapPin, Phone, Search, ChevronRight, Crosshair } from "lucide-rea
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
-import { useZones, usePharmacies } from "@/lib/supabase-hooks";
+import { useZones, usePharmacies, useAllPharmacies } from "@/lib/supabase-hooks";
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
+import { useModeOuverture } from "@/lib/horaires";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -15,7 +16,13 @@ function Index() {
   const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones, loading } = useZones();
-  const { items: pharmacies } = usePharmacies(zone || null);
+  const { mode, libelle } = useModeOuverture();
+
+  const { items: gardePharmacies } = usePharmacies(zone || null);
+  // Toujours appelé — sert de source en mode jour ET de prefetch hors-ligne
+  const { items: allPharmacies } = useAllPharmacies(zone || null);
+
+  const pharmacies = mode === "jour" ? allPharmacies : gardePharmacies;
   const loc = useUserLocation();
 
   const nearest = useMemo(() => {
@@ -50,11 +57,14 @@ function Index() {
     { to: "/medicaments", label: t("medicines"), icon: Search, tone: "soft" as const },
   ];
 
+  const nearestTitle = mode === "jour" ? t("nearest_open") : t("nearest_pharmacy");
+
   return (
     <AppShell>
       <section className="bg-primary-soft px-4 pt-6 pb-8">
         <h1 className="text-2xl font-extrabold leading-tight text-primary-dark">{t("tagline")}</h1>
         <p className="mt-1 text-sm text-primary-dark/70">{t("app_name")}</p>
+        <p className="mt-1 text-xs text-primary-dark/60">{libelle}</p>
 
         <label className="mt-5 block text-xs font-semibold uppercase tracking-wide text-primary-dark/80">
           {t("select_zone")}
@@ -91,7 +101,7 @@ function Index() {
           <div className="flex items-center gap-2">
             <Crosshair className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              {t("nearest_pharmacy")}
+              {nearestTitle}
             </h2>
           </div>
 
