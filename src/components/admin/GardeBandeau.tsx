@@ -16,7 +16,6 @@ export function GardeBandeau({ onGoToPlanning }: Props) {
     supabase
       .from("planning_garde")
       .select("statut")
-      .eq("source", "api-onpt")
       .lte("date_debut", today)
       .gte("date_fin", today)
       .then(({ data }) => {
