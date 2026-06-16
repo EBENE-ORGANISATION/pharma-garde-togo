@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnnuaireTab } from "@/components/admin/AnnuaireTab";
 import { PlanningTab } from "@/components/admin/PlanningTab";
+import { GardeBandeau } from "@/components/admin/GardeBandeau";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -70,6 +71,7 @@ function AdminPage() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
+  const [activeTab, setActiveTab] = useState("planning");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -146,7 +148,9 @@ function AdminPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="planning">
+      <GardeBandeau onGoToPlanning={() => setActiveTab("planning")} />
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="planning">Planning de la semaine</TabsTrigger>
           <TabsTrigger value="annuaire">Annuaire</TabsTrigger>
