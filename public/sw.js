@@ -3,7 +3,7 @@
 //
 // Bump CACHE_VERSION on every deploy that changes cached assets so old
 // caches get cleaned up on activate.
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `pharmagarde-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -65,18 +65,34 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigations (HTML pages): cache-first, falling back to the cached app
-  // shell ("/") for client-side routing, then to a static offline page.
+  // Navigations (HTML pages): stale-while-revalidate.
+  // On répond immédiatement avec le cache (démarrage rapide en 2G/3G) pendant
+  // qu'on rafraîchit "/" en arrière-plan. Sans cache, on attend le réseau ;
+  // en dernier recours on sert la page hors-ligne statique.
   if (request.mode === "navigate") {
+    const networkFetch = fetch(request);
+
+    // Maintient le SW actif le temps de mettre le cache à jour.
+    event.waitUntil(
+      networkFetch
+        .then(async (resp) => {
+          if (resp.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put("/", resp.clone());
+          }
+        })
+        .catch(() => {}),
+    );
+
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match("/");
+        if (cached) return cached;
         try {
-          return await cacheFirst(request, cache);
+          return await networkFetch;
         } catch {
-          return (
-            (await cache.match("/")) || (await cache.match("/offline.html")) || Response.error()
-          );
+          return (await cache.match("/offline.html")) || Response.error();
         }
       })(),
     );
