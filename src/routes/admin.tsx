@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnnuaireTab } from "@/components/admin/AnnuaireTab";
 import { PlanningTab } from "@/components/admin/PlanningTab";
 import { GardeBandeau } from "@/components/admin/GardeBandeau";
+import { JoursFeriesTab } from "@/components/admin/JoursFeriesTab";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -154,12 +155,16 @@ function AdminPage() {
         <TabsList>
           <TabsTrigger value="planning">Planning de la semaine</TabsTrigger>
           <TabsTrigger value="annuaire">Annuaire</TabsTrigger>
+          <TabsTrigger value="feries">Jours fériés</TabsTrigger>
         </TabsList>
         <TabsContent value="planning" className="mt-4">
           <PlanningTab zones={zones} />
         </TabsContent>
         <TabsContent value="annuaire" className="mt-4">
           <AnnuaireTab zones={zones} />
+        </TabsContent>
+        <TabsContent value="feries" className="mt-4">
+          <JoursFeriesTab />
         </TabsContent>
       </Tabs>
     </div>
