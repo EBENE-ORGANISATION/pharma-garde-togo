@@ -13,6 +13,65 @@ export async function publishZone(zoneId: string) {
   return supabase.rpc("publier_zone", { p_zone_id: zoneId });
 }
 
+// ---- Géocodage ----
+
+export type PharmacieGeo = {
+  id: string;
+  slug: string | null;
+  nom: string;
+  adresse: string | null;
+  zone_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+export type ZoneAdmin = {
+  id: string;
+  slug: string;
+  nom: string;
+};
+
+export async function listPharmaciesSansGps() {
+  return supabase
+    .from("pharmacies")
+    .select("id, slug, nom, adresse, zone_id, latitude, longitude")
+    .is("latitude", null)
+    .order("nom", { ascending: true });
+}
+
+export async function rechercherPharmacie(terme: string) {
+  return supabase
+    .from("pharmacies")
+    .select("id, slug, nom, adresse, zone_id, latitude, longitude")
+    .ilike("nom", `%${terme}%`)
+    .order("nom", { ascending: true })
+    .limit(30);
+}
+
+export async function listZones() {
+  return supabase
+    .from("zones")
+    .select("id, slug, nom")
+    .order("nom", { ascending: true });
+}
+
+export async function majCoordsPharmacie(
+  id: string,
+  latitude: number,
+  longitude: number,
+  zoneId?: string | null,
+) {
+  return supabase
+    .from("pharmacies")
+    .update({
+      latitude,
+      longitude,
+      geo_source: "manuel",
+      ...(zoneId != null ? { zone_id: zoneId } : {}),
+    })
+    .eq("id", id);
+}
+
 // ---- Jours fériés ----
 
 export type JourFerie = {

@@ -62,6 +62,21 @@ export const translations: Dict = {
   pharmacies_open_in: { fr: "Pharmacies ouvertes —", en: "Open pharmacies —" },
   nearest_open: { fr: "Pharmacie ouverte la plus proche", en: "Nearest open pharmacy" },
   position_unknown: { fr: "Position non renseignée", en: "Location not available" },
+  admin_tab_gps: { fr: "GPS", en: "GPS" },
+  geocodage_titre: { fr: "Géocodage des pharmacies", en: "Pharmacy geocoding" },
+  geocodage_recherche: { fr: "Rechercher une pharmacie…", en: "Search a pharmacy…" },
+  geocodage_sans_gps: { fr: "Pharmacies sans coordonnées GPS", en: "Pharmacies without GPS" },
+  geocodage_choisir_zone: { fr: "Choisir une zone", en: "Choose a zone" },
+  geocodage_cliquer_carte: {
+    fr: "Cliquez sur la carte pour placer la pharmacie",
+    en: "Click on the map to place the pharmacy",
+  },
+  geocodage_enregistrer: { fr: "Enregistrer les coordonnées", en: "Save coordinates" },
+  geocodage_succes: { fr: "Coordonnées enregistrées.", en: "Coordinates saved." },
+  geocodage_aucune: {
+    fr: "Toutes les pharmacies ont des coordonnées GPS.",
+    en: "All pharmacies have GPS coordinates.",
+  },
   about_text: {
     fr: "PharmaGarde aide à localiser rapidement les pharmacies de garde au Togo, même avec une connexion limitée.",
     en: "PharmaGarde helps you quickly find on-duty pharmacies in Togo, even on a slow connection.",
