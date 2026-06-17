@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useJoursFeries } from "@/lib/supabase-hooks";
 
 // Togo = UTC+0 toute l'année (pas de DST, pas de décalage).
 // Toutes les comparaisons utilisent les méthodes UTC de Date.
@@ -62,19 +63,29 @@ export function prochainChangement(
 
 /**
  * Hook React : retourne le mode courant et son libellé.
- * Se réévalue automatiquement toutes les minutes.
+ * Intègre les jours fériés (via useJoursFeries) et se réévalue toutes les minutes.
+ * Signature publique inchangée : () => { mode, libelle }.
  */
 export function useModeOuverture() {
+  const joursFeries = useJoursFeries();
+
   const [state, setState] = useState(() => {
     const now = new Date();
     return { mode: modeOuverture(now), libelle: prochainChangement(now) };
   });
+
   useEffect(() => {
-    const id = setInterval(() => {
+    // Réévalue immédiatement avec les fériés chargés, puis toutes les minutes.
+    // L'effet se relance quand joursFeries change (cache puis réseau) afin que
+    // l'intervalle ait toujours le Set à jour sans closure périmée.
+    const tick = () => {
       const now = new Date();
-      setState({ mode: modeOuverture(now), libelle: prochainChangement(now) });
-    }, 60_000);
+      setState({ mode: modeOuverture(now, joursFeries), libelle: prochainChangement(now, joursFeries) });
+    };
+    tick();
+    const id = setInterval(tick, 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [joursFeries]);
+
   return state as { mode: ModeOuverture; libelle: string };
 }

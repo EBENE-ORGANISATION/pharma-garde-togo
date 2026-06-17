@@ -338,6 +338,46 @@ export function useMedicineSearch(q: string) {
   return { items, loading };
 }
 
+export function useJoursFeries(): Set<string> {
+  const [set, setSet] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    let cancelled = false;
+    const db = getDb();
+    (async () => {
+      // 1. cache-first via la table meta existante
+      if (db) {
+        try {
+          const cached = await db.meta.get("jours_feries");
+          if (!cancelled && cached && Array.isArray(cached.value)) {
+            setSet(new Set(cached.value as string[]));
+          }
+        } catch {
+          // ignore cache read errors
+        }
+      }
+
+      // 2. réseau
+      try {
+        const { data } = await supabase
+          .from("jours_feries")
+          .select("date");
+        if (cancelled) return;
+        const dates = (data ?? []).map((r: { date: string }) => r.date as string);
+        setSet(new Set(dates));
+        if (db) {
+          await db.meta.put({ key: "jours_feries", value: dates, updated_at: Date.now() });
+        }
+      } catch {
+        // offline : conserve le cache
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return set;
+}
+
 export function useAllPharmacies(zoneId: string | null) {
   const [items, setItems] = useState<Pharmacy[]>([]);
   const [loading, setLoading] = useState(true);
