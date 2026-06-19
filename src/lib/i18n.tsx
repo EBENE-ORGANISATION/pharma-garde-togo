@@ -96,6 +96,43 @@ export const translations: Dict = {
   police: { fr: "Police", en: "Police" },
   firemen: { fr: "Pompiers", en: "Fire dept." },
   open_until_short: { fr: "ouverte jusqu'à", en: "open until" },
+  // Map
+  my_location: { fr: "Ma position", en: "My location" },
+  legend_on_duty: { fr: "De garde", en: "On duty" },
+  legend_open: { fr: "Ouverte", en: "Open" },
+  legend_you: { fr: "Vous", en: "You" },
+  tap_marker_hint: {
+    fr: "Touchez un marqueur pour les détails.",
+    en: "Tap a marker for details.",
+  },
+  close: { fr: "Fermer", en: "Close" },
+  // Medicines
+  search_medicine_short: { fr: "Rechercher un médicament…", en: "Search a medicine…" },
+  medicines_subtitle: {
+    fr: "Annuaire par molécule (DCI), à titre indicatif.",
+    en: "Directory by active ingredient (INN), for guidance only.",
+  },
+  loading: { fr: "Chargement…", en: "Loading…" },
+  no_results_hint: {
+    fr: "Essayez avec une autre orthographe ou la DCI (paracétamol, amoxicilline…).",
+    en: "Try another spelling or the INN (paracetamol, amoxicillin…).",
+  },
+  type_to_search: {
+    fr: "Tapez le nom d'un médicament pour lancer la recherche.",
+    en: "Type a medicine name to start searching.",
+  },
+  // About
+  about_intro: {
+    fr: "PharmaGarde vous aide à trouver, à toute heure, la pharmacie de garde ou ouverte la plus proche au Togo. Pensée pour fonctionner même avec une connexion limitée.",
+    en: "PharmaGarde helps you find, at any time, the nearest on-duty or open pharmacy in Togo. Built to work even with a slow connection.",
+  },
+  version: { fr: "Version", en: "Version" },
+  sources_title: { fr: "Sources", en: "Sources" },
+  sources_text: {
+    fr: "Données issues de la Liste Nationale des Médicaments Essentiels (LNME) et de sources publiques. Pour signaler une erreur, contactez-nous.",
+    en: "Data from the National Essential Medicines List (LNME) and public sources. To report an error, please contact us.",
+  },
+  language_choice: { fr: "Langue de l'application", en: "App language" },
 };
 
 export const ZONES = [
