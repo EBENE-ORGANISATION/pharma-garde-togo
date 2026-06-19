@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { LanguageProvider } from "@/lib/i18n";
@@ -125,6 +127,20 @@ function RootComponent() {
 
   useEffect(() => {
     registerServiceWorker();
+  }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle: { remove: () => void } | undefined;
+    App.addListener("backButton", ({ canGoBack }) => {
+      if (canGoBack) window.history.back();
+      else App.exitApp();
+    }).then((h) => {
+      handle = h;
+    });
+    return () => {
+      handle?.remove();
+    };
   }, []);
 
   return (
