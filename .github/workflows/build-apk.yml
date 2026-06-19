@@ -3,6 +3,9 @@ name: Build APK Android
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -51,3 +54,13 @@ jobs:
           name: pharmagarde-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+
+      - name: Publier l'APK en Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" \
+            android/app/build/outputs/apk/release/app-release.apk \
+            --title "PharmaGarde build ${{ github.run_number }}" \
+            --notes "Build automatique de l'APK signé." \
+            --latest
