@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Geolocation } from "@capacitor/geolocation";
+import { Capacitor } from "@capacitor/core";
 
 export type Coords = { lat: number; lon: number };
 
@@ -32,30 +34,37 @@ function emit() {
 }
 
 export function requestLocation() {
-  if (typeof window === "undefined" || !("geolocation" in navigator)) {
+  if (typeof window === "undefined") {
     state = { coords: null, status: "unavailable" };
     emit();
     return;
   }
   state = { ...state, status: "loading" };
   emit();
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
+
+  (async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await Geolocation.requestPermissions();
+      }
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 60000,
+      });
       state = {
         coords: { lat: pos.coords.latitude, lon: pos.coords.longitude },
         status: "ok",
       };
-      emit();
-    },
-    (err) => {
+    } catch (err: unknown) {
+      const code = (err as { code?: number })?.code;
       state = {
         coords: null,
-        status: err.code === err.PERMISSION_DENIED ? "denied" : "unavailable",
+        status: code === 1 ? "denied" : "unavailable",
       };
-      emit();
-    },
-    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
-  );
+    }
+    emit();
+  })();
 }
 
 export function useUserLocation() {
