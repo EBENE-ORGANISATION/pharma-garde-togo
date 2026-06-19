@@ -298,19 +298,17 @@ function Index() {
         </div>
       </section>
 
-      {/* Geolocation hint */}
-      {!loc.coords && (
-        <section className="px-4 pt-5">
-          <button
-            onClick={loc.request}
-            disabled={loc.status === "loading"}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3 text-sm font-bold text-primary-dark shadow-card active:scale-[0.99] disabled:opacity-60"
-          >
-            <Navigation className="h-4 w-4 text-primary" />
-            {loc.status === "loading" ? t("locating") : t("use_my_location")}
-          </button>
-        </section>
-      )}
+      {/* Geolocation */}
+      <section className="px-4 pt-5">
+        <button
+          onClick={loc.request}
+          disabled={loc.status === "loading"}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3 text-sm font-bold text-primary-dark shadow-card active:scale-[0.99] disabled:opacity-60"
+        >
+          <Navigation className={"h-4 w-4 text-primary" + (loc.status === "loading" ? " animate-spin" : "")} />
+          {loc.status === "loading" ? t("locating") : t("use_my_location")}
+        </button>
+      </section>
 
       {/* Disclaimer */}
       <section className="px-4 pb-6 pt-7">
