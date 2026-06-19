@@ -26,6 +26,30 @@ export type Database = {
         }
         Relationships: []
       }
+      jours_feries: {
+        Row: {
+          a_confirmer: boolean | null
+          created_at: string | null
+          date: string
+          id: string
+          nom: string
+        }
+        Insert: {
+          a_confirmer?: boolean | null
+          created_at?: string | null
+          date: string
+          id?: string
+          nom: string
+        }
+        Update: {
+          a_confirmer?: boolean | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          nom?: string
+        }
+        Relationships: []
+      }
       medicaments: {
         Row: {
           created_at: string
