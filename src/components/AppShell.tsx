@@ -25,7 +25,7 @@ export function AppShell({
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background">
       {!hideHeader && (
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}>
           <Link to="/" className="flex min-w-0 items-center gap-2">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
               <Pill className="h-4 w-4" />
@@ -39,7 +39,7 @@ export function AppShell({
 
       <main className="flex-1 pb-24">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-border bg-background/95 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-border bg-background/95 backdrop-blur" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <ul className="grid grid-cols-4">
           {nav.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
