@@ -81,6 +81,21 @@ export const translations: Dict = {
     fr: "PharmaGarde aide à localiser rapidement les pharmacies de garde au Togo, même avec une connexion limitée.",
     en: "PharmaGarde helps you quickly find on-duty pharmacies in Togo, even on a slow connection.",
   },
+  offline_available: { fr: "Disponible hors-ligne · à jour", en: "Available offline · up to date" },
+  change_zone: { fr: "Changer de zone", en: "Change zone" },
+  tonight_on_duty: { fr: "Ce soir · pharmacies de garde", en: "Tonight · on-duty pharmacies" },
+  today_open: { fr: "Maintenant · pharmacies ouvertes", en: "Now · open pharmacies" },
+  status_on_duty: { fr: "DE GARDE", en: "ON DUTY" },
+  status_open: { fr: "OUVERTE", en: "OPEN" },
+  directions: { fr: "Itinéraire", en: "Directions" },
+  other_on_duty: { fr: "Autres pharmacies de garde", en: "Other on-duty pharmacies" },
+  other_open: { fr: "Autres pharmacies ouvertes", en: "Other open pharmacies" },
+  see_all: { fr: "Voir tout", en: "See all" },
+  emergency_quick: { fr: "Urgences", en: "Emergencies" },
+  samu: { fr: "SAMU", en: "Ambulance" },
+  police: { fr: "Police", en: "Police" },
+  firemen: { fr: "Pompiers", en: "Fire dept." },
+  open_until_short: { fr: "ouverte jusqu'à", en: "open until" },
 };
 
 export const ZONES = [
