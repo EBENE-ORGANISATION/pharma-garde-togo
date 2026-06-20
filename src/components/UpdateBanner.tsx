@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { useLang } from "@/lib/i18n";
 
 const REPO = "EBENE-ORGANISATION/pharma-garde-togo";
@@ -54,14 +55,12 @@ export function UpdateBanner() {
   return (
     <div className="flex items-center gap-3 border-b border-border bg-primary-soft px-4 py-2.5">
       <span className="flex-1 text-sm font-semibold text-primary-dark">{t("update_available")}</span>
-      <a
-        href={APK_URL}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        onClick={() => { Browser.open({ url: APK_URL }); }}
         className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground active:scale-[0.97]"
       >
         {t("update_now")}
-      </a>
+      </button>
       <button
         onClick={() => {
           localStorage.setItem(DISMISS_KEY, String(info.latest));
