@@ -3,6 +3,7 @@ import { Home, Map, Pill, Info } from "lucide-react";
 import type { ReactNode } from "react";
 import { useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { UpdateBanner } from "@/components/UpdateBanner";
 
 export function AppShell({
   children,
@@ -36,6 +37,7 @@ export function AppShell({
         </header>
       )}
 
+      <UpdateBanner />
       <main className="flex-1 pb-24">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-border bg-background/95 backdrop-blur" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
