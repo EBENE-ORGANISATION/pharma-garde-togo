@@ -296,6 +296,12 @@ function Index() {
             </a>
           ))}
         </div>
+        <Link
+          to="/urgences"
+          className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-primary-dark active:opacity-70"
+        >
+          {t("see_all_numbers")} →
+        </Link>
       </section>
 
       {/* Geolocation */}

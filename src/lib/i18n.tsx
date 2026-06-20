@@ -92,6 +92,7 @@ export const translations: Dict = {
   other_open: { fr: "Autres pharmacies ouvertes", en: "Other open pharmacies" },
   see_all: { fr: "Voir tout", en: "See all" },
   emergency_quick: { fr: "Urgences", en: "Emergencies" },
+  see_all_numbers: { fr: "Voir tous les numéros", en: "See all numbers" },
   samu: { fr: "SAMU", en: "Ambulance" },
   police: { fr: "Police", en: "Police" },
   firemen: { fr: "Pompiers", en: "Fire dept." },
