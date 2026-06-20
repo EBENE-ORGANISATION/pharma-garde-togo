@@ -15,6 +15,7 @@ import { GeocodageTab } from "@/components/admin/GeocodageTab";
 import { NumerosUrgenceTab } from "@/components/admin/NumerosUrgenceTab";
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   component: AdminPage,
 });
 
