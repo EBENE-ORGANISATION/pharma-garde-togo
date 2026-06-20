@@ -104,3 +104,30 @@ export async function updateJourFerie(
 export async function deleteJourFerie(id: string) {
   return supabase.from("jours_feries").delete().eq("id", id);
 }
+
+// ---- Numéros d'urgence ----
+
+export type NumeroUrgence = {
+  id: string;
+  libelle: string;
+  numero: string;
+  ordre: number;
+  actif: boolean;
+  zone_id: string | null;
+};
+
+export async function listNumerosUrgence() {
+  return supabase
+    .from("numeros_urgence")
+    .select("id, libelle, numero, ordre, actif, zone_id")
+    .order("ordre", { ascending: true });
+}
+export async function addNumeroUrgence(libelle: string, numero: string, ordre: number, zoneId: string | null, actif: boolean) {
+  return supabase.from("numeros_urgence").insert({ libelle, numero, ordre, zone_id: zoneId, actif });
+}
+export async function updateNumeroUrgence(id: string, patch: Partial<Pick<NumeroUrgence, "libelle" | "numero" | "ordre" | "actif" | "zone_id">>) {
+  return supabase.from("numeros_urgence").update(patch).eq("id", id);
+}
+export async function deleteNumeroUrgence(id: string) {
+  return supabase.from("numeros_urgence").delete().eq("id", id);
+}
