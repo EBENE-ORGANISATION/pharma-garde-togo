@@ -32,6 +32,9 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Build web + sync Capacitor
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: npm run build:cap
 
       - name: Décoder le keystore de signature
