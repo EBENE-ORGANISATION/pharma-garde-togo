@@ -18,7 +18,6 @@ export function AppShell({
   const nav = [
     { to: "/", icon: Home, label: t("home") },
     { to: "/carte", icon: Map, label: t("map") },
-    { to: "/medicaments", icon: Pill, label: t("medicines") },
     { to: "/about", icon: Info, label: t("about") },
   ] as const;
 
@@ -40,7 +39,7 @@ export function AppShell({
       <main className="flex-1 pb-24">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-border bg-background/95 backdrop-blur" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-3">
           {nav.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             const Icon = item.icon;
