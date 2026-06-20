@@ -90,8 +90,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:title", content: "PharmaGarde — Pharmacies de garde au Togo" },
       { name: "twitter:description", content: "Trouvez rapidement les pharmacies de garde et les numéros d'urgence au Togo." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fcb88314-cecc-4997-adfc-440eea64df4c/id-preview-e082e834--2ebb6164-e644-4d03-9cb7-8f47833f073e.lovable.app-1781459581518.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fcb88314-cecc-4997-adfc-440eea64df4c/id-preview-e082e834--2ebb6164-e644-4d03-9cb7-8f47833f073e.lovable.app-1781459581518.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/M5WB6wyN5TUZhDBoh9k25kLNV3o1/social-images/social-1781928920309-icon.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/M5WB6wyN5TUZhDBoh9k25kLNV3o1/social-images/social-1781928920309-icon.webp" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
