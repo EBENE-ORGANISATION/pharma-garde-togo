@@ -165,6 +165,28 @@ Deno.serve(async (_req: Request): Promise<Response> => {
         continue;
       }
 
+      // Aligner la liste publiée sur la source : retirer les pharmacies qui ne
+      // sont plus dans la liste de l'Ordre (sûr : on est déjà après les garde-fous).
+      const { error: cleanError } = await supabase.rpc("depublier_garde_absents", {
+        p_de:    pDe,
+        p_a:     pA,
+        p_slugs: slugs,
+      });
+      if (cleanError) {
+        console.error(`[fetch-garde] ${pDe}→${pA} : erreur depublier_garde_absents — ${cleanError.message}`);
+        resultats.push({
+          de:             pDe,
+          a:              pA,
+          slugs_extraits: slugs.length,
+          inserees,
+          deja_publiees,
+          slugs_inconnus,
+          decision:       "bloquee" as const,
+          raison:         `erreur lors de l'alignement : ${cleanError.message}`,
+        });
+        continue;
+      }
+
       const { data: pubData, error: pubError } = await supabase.rpc("publier_garde_auto", {
         p_de: pDe,
         p_a:  pA,
