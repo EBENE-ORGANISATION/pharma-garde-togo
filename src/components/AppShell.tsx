@@ -1,9 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Map, Pill, Info } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { pingUsage } from "@/lib/usage";
 
 export function AppShell({
   children,
@@ -15,6 +16,8 @@ export function AppShell({
 }) {
   const { t } = useLang();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => { pingUsage(); }, []);
 
   const nav = [
     { to: "/", icon: Home, label: t("home") },
