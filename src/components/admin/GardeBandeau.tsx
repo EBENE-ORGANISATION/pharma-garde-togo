@@ -15,15 +15,19 @@ export function GardeBandeau({ onGoToPlanning }: Props) {
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     supabase
       .from("planning_garde")
-      .select("statut")
+      .select("statut, date_debut")
       .lte("date_debut", today)
       .gte("date_fin", today)
       .then(({ data }) => {
-        const rows = data ?? [];
-        if (rows.length === 0) {
+        const all = (data ?? []) as { statut: string; date_debut: string }[];
+        if (all.length === 0) {
           setEtat("aucune");
           return;
         }
+        // Ne garder que la semaine en cours (la plus récente) pour éviter un
+        // faux "non publiée" les jours de chevauchement entre deux semaines.
+        const maxDebut = all.reduce((m, r) => (r.date_debut > m ? r.date_debut : m), all[0].date_debut);
+        const rows = all.filter((r) => r.date_debut === maxDebut);
         const hasBrouillon = rows.some((r) => r.statut === "brouillon");
         if (hasBrouillon) {
           setEtat("brouillon");
