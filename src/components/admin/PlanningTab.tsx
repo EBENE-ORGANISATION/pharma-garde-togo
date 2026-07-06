@@ -34,12 +34,14 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
   const [dateFin, setDateFin] = useState(plusDaysISO(7));
   const [currentStatut, setCurrentStatut] = useState<string | null>(null);
   const [currentSource, setCurrentSource] = useState<string | null>(null);
+  const [unlocked, setUnlocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<"brouillon" | "publie" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const autoManaged = currentSource === "api-onpt";
+  const locked = autoManaged && !unlocked;
 
   useEffect(() => {
     if (zones.length > 0 && !zoneId) setZoneId(zones[0].id);
@@ -51,6 +53,7 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
     setLoading(true);
     setError(null);
     setSuccess(null);
+    setUnlocked(false);
     (async () => {
       const today = todayISO();
       const [{ data: pharms, error: pharmsError }, { data: planning, error: planningError }] =
@@ -74,7 +77,6 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
 
       setPharmacies((pharms ?? []) as Pharmacy[]);
 
-      // On ne garde que la semaine de garde EN COURS (la plus récente couvrant aujourd'hui).
       const allRows = (planning ?? []) as PlanningRow[];
       let rows = allRows;
       if (allRows.length > 0) {
@@ -112,12 +114,11 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
   }
 
   async function save(statut: "brouillon" | "publie") {
-    if (!zoneId || autoManaged) return;
+    if (!zoneId || locked) return;
     setSaving(statut);
     setError(null);
     setSuccess(null);
 
-    // Suppression LIMITÉE à la semaine affichée (ne touche plus les autres semaines).
     const { error: deleteError } = await supabase
       .from("planning_garde")
       .delete()
@@ -149,6 +150,7 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
 
     setCurrentStatut(selected.size > 0 ? statut : null);
     setCurrentSource(selected.size > 0 ? "admin" : null);
+    setUnlocked(false);
 
     if (statut === "publie") {
       const { data, error: publishError } = await publishZone(zoneId);
@@ -174,8 +176,8 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-snug text-amber-900">
         <strong>La garde est publiée automatiquement</strong> depuis la liste de l'Ordre, plusieurs fois par jour.
-        Cet onglet est un <strong>secours manuel</strong> : ne l'utilise que pour une zone/semaine non couverte
-        par l'Ordre. Une modification manuelle remplace la garde <strong>de la semaine affichée</strong> uniquement.
+        Cet onglet sert surtout de <strong>secours manuel</strong> (zone/semaine non couverte par l'Ordre).
+        Une modification manuelle remplace la garde <strong>de la semaine affichée</strong> uniquement.
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -192,18 +194,30 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
         </div>
         <div>
           <label className="text-xs font-semibold text-muted-foreground">Début</label>
-          <Input type="date" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} disabled={autoManaged} />
+          <Input type="date" value={dateDebut} onChange={(e) => setDateDebut(e.target.value)} disabled={locked} />
         </div>
         <div>
           <label className="text-xs font-semibold text-muted-foreground">Fin</label>
-          <Input type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)} disabled={autoManaged} />
+          <Input type="date" value={dateFin} onChange={(e) => setDateFin(e.target.value)} disabled={locked} />
         </div>
       </div>
 
-      {autoManaged && (
-        <p className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-          ✅ Cette zone est <strong>gérée automatiquement</strong> par l'Ordre pour la semaine en cours
-          ({dateDebut} → {dateFin}). L'édition manuelle est désactivée pour ne pas écraser la garde officielle.
+      {autoManaged && !unlocked && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          <p>
+            ✅ Cette zone est <strong>gérée automatiquement</strong> par l'Ordre pour la semaine affichée
+            ({dateDebut} → {dateFin}). L'édition est verrouillée pour ne pas écraser la garde officielle par accident.
+          </p>
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => setUnlocked(true)}>
+            Modifier manuellement quand même
+          </Button>
+        </div>
+      )}
+
+      {autoManaged && unlocked && (
+        <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          ⚠️ Édition manuelle activée. En enregistrant, tu <strong>remplaces la garde automatique</strong> de
+          cette semaine par ta sélection (l'Ordre ne la mettra plus à jour pour cette semaine).
         </p>
       )}
 
@@ -221,7 +235,7 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
         <ul className="space-y-2">
           {pharmacies.map((p) => (
             <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-card">
-              <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggle(p.id)} disabled={autoManaged} />
+              <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggle(p.id)} disabled={locked} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-bold">{p.nom}</div>
                 {p.adresse && <div className="truncate text-xs text-muted-foreground">{p.adresse}</div>}
@@ -237,10 +251,10 @@ export function PlanningTab({ zones }: { zones: Zone[] }) {
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => save("brouillon")} disabled={saving !== null || autoManaged}>
+        <Button variant="outline" onClick={() => save("brouillon")} disabled={saving !== null || locked}>
           {saving === "brouillon" ? "Enregistrement…" : "Enregistrer le brouillon"}
         </Button>
-        <Button onClick={() => save("publie")} disabled={saving !== null || autoManaged}>
+        <Button onClick={() => save("publie")} disabled={saving !== null || locked}>
           {saving === "publie" ? "Publication…" : "Publier la semaine"}
         </Button>
       </div>
