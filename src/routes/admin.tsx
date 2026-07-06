@@ -14,6 +14,7 @@ import { JoursFeriesTab } from "@/components/admin/JoursFeriesTab";
 import { GeocodageTab } from "@/components/admin/GeocodageTab";
 import { NumerosUrgenceTab } from "@/components/admin/NumerosUrgenceTab";
 import { StatsTab } from "@/components/admin/StatsTab";
+import { SignalementsTab } from "@/components/admin/SignalementsTab";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -161,6 +162,7 @@ function AdminPage() {
           <TabsTrigger value="annuaire">Annuaire</TabsTrigger>
           <TabsTrigger value="feries">Jours fériés</TabsTrigger>
           <TabsTrigger value="gps">GPS</TabsTrigger>
+          <TabsTrigger value="signalements">Signalements</TabsTrigger>
           <TabsTrigger value="urgences">Numéros d'urgence</TabsTrigger>
           <TabsTrigger value="stats">Statistiques</TabsTrigger>
         </TabsList>
@@ -176,6 +178,7 @@ function AdminPage() {
         <TabsContent value="gps" className="mt-4">
           <GeocodageTab />
         </TabsContent>
+        <TabsContent value="signalements" className="mt-4"><SignalementsTab /></TabsContent>
         <TabsContent value="urgences" className="mt-4">
           <NumerosUrgenceTab zones={zones} />
         </TabsContent>
