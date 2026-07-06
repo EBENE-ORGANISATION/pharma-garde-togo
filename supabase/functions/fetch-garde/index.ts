@@ -5,7 +5,11 @@
 // sont respectés. Envoie une alerte e-mail (Resend) si une semaine ne peut PAS
 // être publiée automatiquement.
 //
-// Déclenchement : cron planifié (ex. chaque lundi matin) ou appel manuel HTTP.
+// Journalisation : à CHAQUE passage, une ligne est écrite dans la table
+// garde_runs (statut, nb_importees, nb_inconnues, semaine_publiee, erreur) —
+// c'est la source de données de la routine superviseur quotidienne.
+//
+// Déclenchement : cron planifié (0 6,12,16,20 * * *) ou appel manuel HTTP.
 // Méthode : GET (pas de corps attendu).
 //
 // Variables d'environnement :
@@ -27,8 +31,52 @@ const MIN_PHARMACIES = 25; // slugs extraits minimum attendus de l'API
 const MAX_INCONNUS   = 5;  // slugs absents de notre annuaire tolérés
 
 Deno.serve(async (_req: Request): Promise<Response> => {
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+  // Client Supabase créé tôt : nécessaire pour journaliser TOUS les cas,
+  // y compris les échecs précoces (API injoignable, aucune donnée).
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabase =
+    supabaseUrl && serviceKey
+      ? createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
+      : null;
+
+  // Écrit une ligne dans garde_runs. Ne casse jamais le cron si ça échoue.
+  async function journaliser(row: {
+    statut: string;
+    nb_importees?: number | null;
+    nb_inconnues?: number | null;
+    semaine_publiee?: string | null;
+    erreur?: string | null;
+  }): Promise<void> {
+    if (!supabase) return;
+    try {
+      await supabase.from("garde_runs").insert({
+        statut:          row.statut,
+        nb_importees:    row.nb_importees ?? null,
+        nb_inconnues:    row.nb_inconnues ?? null,
+        semaine_publiee: row.semaine_publiee ?? null,
+        erreur:          row.erreur ?? null,
+      });
+    } catch (e) {
+      console.error(
+        `[fetch-garde] journalisation garde_runs échouée : ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+
   try {
-    const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+    if (!supabase) {
+      await envoyerAlerte(
+        "⚠️ PharmaGarde — Configuration Edge Function incomplète",
+        "Les variables SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY sont manquantes.",
+      );
+      return json(
+        { ok: false, error: "Variables SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquantes." },
+        500,
+      );
+    }
 
     const apiUrl =
       `${ONPT_API}&filters[a][$gte]=${today}&filters[de][$lte]=${today}`;
@@ -38,6 +86,10 @@ Deno.serve(async (_req: Request): Promise<Response> => {
     });
 
     if (!apiResp.ok) {
+      await journaliser({
+        statut: "erreur",
+        erreur: `API ONPT a répondu ${apiResp.status} ${apiResp.statusText}`,
+      });
       await envoyerAlerte(
         "⚠️ PharmaGarde — API ONPT injoignable",
         `Le cron garde du ${today} n'a pas pu récupérer le planning.\n\n` +
@@ -57,6 +109,7 @@ Deno.serve(async (_req: Request): Promise<Response> => {
     const semaines: unknown[] = apiJson?.data ?? [];
 
     if (semaines.length === 0) {
+      await journaliser({ statut: "rien" });
       await envoyerAlerte(
         "⚠️ PharmaGarde — Aucun planning de garde trouvé",
         `Le cron garde du ${today} n'a trouvé aucun planning de garde.\n\n` +
@@ -69,24 +122,6 @@ Deno.serve(async (_req: Request): Promise<Response> => {
         semaines: [],
       });
     }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !serviceKey) {
-      await envoyerAlerte(
-        "⚠️ PharmaGarde — Configuration Edge Function incomplète",
-        "Les variables SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY sont manquantes.",
-      );
-      return json(
-        { ok: false, error: "Variables SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquantes." },
-        500,
-      );
-    }
-
-    const supabase = createClient(supabaseUrl, serviceKey, {
-      auth: { persistSession: false },
-    });
 
     const resultats = [];
 
@@ -258,6 +293,35 @@ Deno.serve(async (_req: Request): Promise<Response> => {
       );
     }
 
+    // Journalise le résumé de ce passage dans garde_runs (une ligne par run).
+    const r0 = resultats[0] as Record<string, unknown> | undefined;
+    let statutRun = "publiee";
+    if (resultats.some((r) => "error" in r)) {
+      statutRun = "erreur";
+    } else if (resultats.some((r) => (r as Record<string, unknown>).decision === "bloquee")) {
+      statutRun = "bloquee";
+    }
+    const erreurRun =
+      statutRun === "erreur"
+        ? String((resultats.find((r) => "error" in r) as Record<string, unknown> | undefined)?.error ?? "")
+        : statutRun === "bloquee"
+          ? String(
+              (resultats.find((r) => (r as Record<string, unknown>).decision === "bloquee") as
+                | Record<string, unknown>
+                | undefined)?.raison ?? "",
+            )
+          : null;
+    const inconnusRun = Array.isArray(r0?.slugs_inconnus)
+      ? (r0!.slugs_inconnus as string[]).length
+      : null;
+    await journaliser({
+      statut:          statutRun,
+      nb_importees:    (r0?.slugs_extraits as number | undefined) ?? null,
+      nb_inconnues:    inconnusRun,
+      semaine_publiee: r0 ? `${r0.de} → ${r0.a}` : null,
+      erreur:          erreurRun,
+    });
+
     return json({
       ok:       !hasError,
       today,
@@ -265,6 +329,7 @@ Deno.serve(async (_req: Request): Promise<Response> => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    await journaliser({ statut: "erreur", erreur: message });
     await envoyerAlerte(
       "⚠️ PharmaGarde — Erreur inattendue du cron garde",
       `Le cron garde a échoué avec une erreur inattendue :\n\n${message}`,
