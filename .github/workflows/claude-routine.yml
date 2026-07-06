@@ -1,0 +1,28 @@
+name: Routine superviseur garde
+
+on:
+  schedule:
+    - cron: "0 21 * * *"   # tous les jours à 21h UTC (= 21h au Togo)
+  workflow_dispatch: {}      # permet aussi un lancement manuel
+
+jobs:
+  superviseur:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Superviseur quotidien du pipeline de garde
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          SUPABASE_URL:            ${{ secrets.SUPABASE_URL }}
+          SUPABASE_READONLY_KEY:   ${{ secrets.SUPABASE_READONLY_KEY }}
+          RESEND_API_KEY:          ${{ secrets.RESEND_API_KEY }}
+          ALERT_EMAIL:             ${{ secrets.ALERT_EMAIL }}
+        run: |
+          claude -p "$(cat .github/routine-superviseur.md)" \
+            --allowedTools "Bash" \
+            --max-turns 15
