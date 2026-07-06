@@ -16,6 +16,7 @@ import { usePharmacies, useAllPharmacies, useZones } from "@/lib/supabase-hooks"
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 import { useModeOuverture } from "@/lib/horaires";
 import type { Pharmacy } from "@/lib/db";
+import { SignalerDialog } from "@/components/SignalerDialog";
 
 export const Route = createFileRoute("/carte")({
   component: CartePage,
@@ -354,6 +355,7 @@ function CartePage() {
               </a>
               <DirectionsButton p={selected} label={t("directions")} />
             </div>
+            <div className="mt-3 flex justify-center"><SignalerDialog pharmacie={selected} /></div>
           </div>
         </>
       )}

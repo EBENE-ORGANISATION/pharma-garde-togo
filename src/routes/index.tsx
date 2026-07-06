@@ -18,6 +18,7 @@ import { useZones, usePharmacies, useAllPharmacies } from "@/lib/supabase-hooks"
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 import { useModeOuverture } from "@/lib/horaires";
 import type { Pharmacy } from "@/lib/db";
+import { SignalerDialog } from "@/components/SignalerDialog";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -224,6 +225,7 @@ function Index() {
               </a>
               <DirectionsButton p={hero.p} label={t("directions")} />
             </div>
+            <div className="mt-3 flex justify-center"><SignalerDialog pharmacie={hero.p} /></div>
           </article>
         ) : (
           <div className="mt-3 rounded-[24px] border border-dashed border-border bg-card p-5 text-sm text-muted-foreground">

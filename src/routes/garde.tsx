@@ -7,6 +7,7 @@ import { useZone } from "@/lib/zone-store";
 import { usePharmacies, useAllPharmacies, useZones } from "@/lib/supabase-hooks";
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 import { useModeOuverture } from "@/lib/horaires";
+import { SignalerDialog } from "@/components/SignalerDialog";
 
 export const Route = createFileRoute("/garde")({
   component: GardePage,
@@ -144,6 +145,7 @@ function GardePage() {
                   <MapPin className="h-4 w-4" /> {t("see_on_map")}
                 </Link>
               </div>
+              <div className="mt-2 flex justify-center"><SignalerDialog pharmacie={p} /></div>
             </li>
           );
         })}

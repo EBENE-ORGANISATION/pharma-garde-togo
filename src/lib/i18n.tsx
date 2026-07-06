@@ -137,6 +137,19 @@ export const translations: Dict = {
     en: "Data from the National Essential Medicines List (LNME) and public sources. To report an error, please contact us.",
   },
   language_choice: { fr: "Langue de l'application", en: "App language" },
+  report_problem: { fr: "Signaler un problème", en: "Report a problem" },
+  report_type_position: { fr: "La localisation est incorrecte", en: "The location is incorrect" },
+  report_type_ferme: { fr: "La pharmacie a fermé ou déménagé", en: "The pharmacy has closed or moved" },
+  report_type_autre: { fr: "Autre information incorrecte", en: "Other incorrect information" },
+  report_use_location: { fr: "Je suis sur place — utiliser ma position", en: "I'm here — use my location" },
+  report_location_loading: { fr: "Localisation en cours…", en: "Locating…" },
+  report_location_captured: { fr: "Position enregistrée ✓", en: "Location captured ✓" },
+  report_location_error: { fr: "Impossible d'obtenir votre position. Autorisez la localisation.", en: "Could not get your location. Please allow location access." },
+  report_location_hint: { fr: "Utilisez ce bouton uniquement si vous êtes devant la pharmacie.", en: "Only use this if you are standing at the pharmacy." },
+  report_message_ph: { fr: "Détails (facultatif)", en: "Details (optional)" },
+  report_send: { fr: "Envoyer", en: "Send" },
+  report_thanks: { fr: "Merci ! Votre signalement a été envoyé. Il sera vérifié avant toute mise à jour.", en: "Thank you! Your report has been sent. It will be reviewed before any update." },
+  report_error: { fr: "Échec de l'envoi. Veuillez réessayer.", en: "Sending failed. Please try again." },
 };
 
 export const ZONES = [
