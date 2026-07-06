@@ -150,6 +150,8 @@ export const translations: Dict = {
   report_send: { fr: "Envoyer", en: "Send" },
   report_thanks: { fr: "Merci ! Votre signalement a été envoyé. Il sera vérifié avant toute mise à jour.", en: "Thank you! Your report has been sent. It will be reviewed before any update." },
   report_error: { fr: "Échec de l'envoi. Veuillez réessayer.", en: "Sending failed. Please try again." },
+  report_intro: { fr: "Une information incorrecte ? Aidez-nous à améliorer PharmaGarde pour tout le monde. Votre signalement sera vérifié avant toute mise à jour.", en: "Something incorrect? Help us improve PharmaGarde for everyone. Your report will be reviewed before any update." },
+  report_hint: { fr: "Une erreur sur cette pharmacie ? Aidez-nous à l'améliorer.", en: "Something wrong with this pharmacy? Help us improve it." },
 };
 
 export const ZONES = [

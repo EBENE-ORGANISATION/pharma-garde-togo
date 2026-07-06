@@ -355,7 +355,7 @@ function CartePage() {
               </a>
               <DirectionsButton p={selected} label={t("directions")} />
             </div>
-            <div className="mt-3 flex justify-center"><SignalerDialog pharmacie={selected} /></div>
+            <div className="mt-3 flex justify-center"><SignalerDialog pharmacie={selected} showHint /></div>
           </div>
         </>
       )}
