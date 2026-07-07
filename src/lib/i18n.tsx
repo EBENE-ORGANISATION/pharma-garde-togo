@@ -14,6 +14,7 @@ export const translations: Dict = {
   zone: { fr: "Zone", en: "Region" },
   quick_access: { fr: "Accès rapide", en: "Quick access" },
   on_duty: { fr: "Pharmacies de garde", en: "On-duty pharmacies" },
+  mode_open_until: { fr: "Ouvertes jusqu'à", en: "Open until" },
   map: { fr: "Carte", en: "Map" },
   emergency_numbers: { fr: "Numéros d'urgence", en: "Emergency numbers" },
   medicines: { fr: "Médicaments", en: "Medicines" },

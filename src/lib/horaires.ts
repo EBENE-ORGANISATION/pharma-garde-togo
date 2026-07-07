@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useJoursFeries } from "@/lib/supabase-hooks";
+import { useLang } from "@/lib/i18n";
 
 // Togo = UTC+0 toute l'année (pas de DST, pas de décalage).
 // Toutes les comparaisons utilisent les méthodes UTC de Date.
@@ -41,51 +42,32 @@ export function modeOuverture(
   return minutes >= 7 * 60 && minutes < 20 * 60 ? "jour" : "garde";
 }
 
-/**
- * Libellé court destiné à l'UI indiquant l'état courant.
- *
- * Exemples :
- *   "Ouvertes jusqu'à 19h"   (lundi, 14h)
- *   "Ouvertes jusqu'à 13h"   (samedi, 10h)
- *   "Pharmacies de garde"    (dimanche, nuit, jour férié…)
- */
-export function prochainChangement(
-  now: Date,
-  joursFeries: Set<string> = new Set(),
-): string {
-  const mode = modeOuverture(now, joursFeries);
-  if (mode === "jour") {
-    const closeH = now.getUTCDay() === 6 ? 13 : 20;
-    return `Ouvertes jusqu'à ${closeH}h`;
-  }
-  return "Pharmacies de garde";
+/** Heure de fermeture du jour : 13h le samedi, 20h en semaine. */
+function heureFermeture(now: Date): number {
+  return now.getUTCDay() === 6 ? 13 : 20;
 }
 
 /**
- * Hook React : retourne le mode courant et son libellé.
+ * Hook React : retourne le mode courant et son libellé (traduit FR/EN).
  * Intègre les jours fériés (via useJoursFeries) et se réévalue toutes les minutes.
  * Signature publique inchangée : () => { mode, libelle }.
  */
 export function useModeOuverture() {
   const joursFeries = useJoursFeries();
+  const { t } = useLang();
 
-  const [state, setState] = useState(() => {
-    const now = new Date();
-    return { mode: modeOuverture(now), libelle: prochainChangement(now) };
-  });
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    // Réévalue immédiatement avec les fériés chargés, puis toutes les minutes.
-    // L'effet se relance quand joursFeries change (cache puis réseau) afin que
-    // l'intervalle ait toujours le Set à jour sans closure périmée.
-    const tick = () => {
-      const now = new Date();
-      setState({ mode: modeOuverture(now, joursFeries), libelle: prochainChangement(now, joursFeries) });
-    };
-    tick();
-    const id = setInterval(tick, 60_000);
+    const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
-  }, [joursFeries]);
+  }, []);
 
-  return state as { mode: ModeOuverture; libelle: string };
+  const mode = modeOuverture(now, joursFeries);
+  const libelle =
+    mode === "jour"
+      ? `${t("mode_open_until")} ${heureFermeture(now)}h`
+      : t("on_duty");
+
+  return { mode, libelle } as { mode: ModeOuverture; libelle: string };
 }
