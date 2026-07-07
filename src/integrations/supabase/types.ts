@@ -26,6 +26,60 @@ export type Database = {
         }
         Relationships: []
       }
+      app_usage: {
+        Row: {
+          anon_id: string
+          app_version: string | null
+          first_seen: string
+          last_seen: string
+          platform: string | null
+        }
+        Insert: {
+          anon_id: string
+          app_version?: string | null
+          first_seen?: string
+          last_seen?: string
+          platform?: string | null
+        }
+        Update: {
+          anon_id?: string
+          app_version?: string | null
+          first_seen?: string
+          last_seen?: string
+          platform?: string | null
+        }
+        Relationships: []
+      }
+      garde_runs: {
+        Row: {
+          erreur: string | null
+          id: string
+          nb_importees: number | null
+          nb_inconnues: number | null
+          run_at: string
+          semaine_publiee: string | null
+          statut: string
+        }
+        Insert: {
+          erreur?: string | null
+          id?: string
+          nb_importees?: number | null
+          nb_inconnues?: number | null
+          run_at?: string
+          semaine_publiee?: string | null
+          statut: string
+        }
+        Update: {
+          erreur?: string | null
+          id?: string
+          nb_importees?: number | null
+          nb_inconnues?: number | null
+          run_at?: string
+          semaine_publiee?: string | null
+          statut?: string
+        }
+        Relationships: []
+      }
       jours_feries: {
         Row: {
           a_confirmer: boolean | null
@@ -213,6 +267,50 @@ export type Database = {
           },
         ]
       }
+      signalements: {
+        Row: {
+          anon_id: string | null
+          created_at: string
+          id: string
+          lat_suggeree: number | null
+          lng_suggeree: number | null
+          message: string | null
+          pharmacie_id: string
+          statut: string
+          type: string
+        }
+        Insert: {
+          anon_id?: string | null
+          created_at?: string
+          id?: string
+          lat_suggeree?: number | null
+          lng_suggeree?: number | null
+          message?: string | null
+          pharmacie_id: string
+          statut?: string
+          type: string
+        }
+        Update: {
+          anon_id?: string | null
+          created_at?: string
+          id?: string
+          lat_suggeree?: number | null
+          lng_suggeree?: number | null
+          message?: string | null
+          pharmacie_id?: string
+          statut?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signalements_pharmacie_id_fkey"
+            columns: ["pharmacie_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       snapshots: {
         Row: {
           data: Json
@@ -280,6 +378,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      depublier_garde_absents: {
+        Args: { p_a: string; p_de: string; p_slugs: string[] }
+        Returns: number
+      }
       importer_garde: {
         Args: { p_a: string; p_de: string; p_slugs: string[] }
         Returns: {
@@ -289,6 +391,10 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
+      ping_usage: {
+        Args: { p_anon_id: string; p_platform: string; p_version: string }
+        Returns: undefined
+      }
       publier_garde_auto: {
         Args: { p_a: string; p_de: string }
         Returns: {
@@ -313,6 +419,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      stats_usage: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
