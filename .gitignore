@@ -35,3 +35,12 @@ dist-ssr
 *.sw?
 *.keystore
 .env
+
+# --- Fichiers de build APK / Android (ne pas versionner) ---
+*.apk
+*.aab
+apk-test/
+build-error*.txt
+android/app/build/
+android/build/
+android/.gradle/
