@@ -19,8 +19,8 @@ function toDateStr(d: Date): string {
  * Règles (heure Togo = UTC) :
  *   Dimanche             → "garde"
  *   Jour férié           → "garde"
- *   Samedi 07h30–13h00  → "jour", sinon "garde"
- *   Lun–ven 07h30–19h00 → "jour", sinon "garde"
+ *   Samedi 07h00–13h00  → "jour", sinon "garde"
+ *   Lun–ven 07h00–20h00 → "jour", sinon "garde"
  */
 export function modeOuverture(
   now: Date,
@@ -34,11 +34,11 @@ export function modeOuverture(
   if (joursFeries.has(toDateStr(now))) return "garde";
 
   if (dow === 6) {
-    return minutes >= 7 * 60 + 30 && minutes < 13 * 60 ? "jour" : "garde";
+    return minutes >= 7 * 60 && minutes < 13 * 60 ? "jour" : "garde";
   }
 
   // lun–ven
-  return minutes >= 7 * 60 + 30 && minutes < 19 * 60 ? "jour" : "garde";
+  return minutes >= 7 * 60 && minutes < 20 * 60 ? "jour" : "garde";
 }
 
 /**
@@ -55,7 +55,7 @@ export function prochainChangement(
 ): string {
   const mode = modeOuverture(now, joursFeries);
   if (mode === "jour") {
-    const closeH = now.getUTCDay() === 6 ? 13 : 19;
+    const closeH = now.getUTCDay() === 6 ? 13 : 20;
     return `Ouvertes jusqu'à ${closeH}h`;
   }
   return "Pharmacies de garde";
