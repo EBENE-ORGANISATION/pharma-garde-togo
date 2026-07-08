@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install -g npm@10.9.2
-          npm install --no-audit --no-fund
+          npm ci
 
       - name: Build web + sync Capacitor
         env:
