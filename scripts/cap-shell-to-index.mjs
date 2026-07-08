@@ -1,8 +1,8 @@
 import { copyFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
-const src = resolve(".output/public/_shell.html");
-const dest = resolve(".output/public/index.html");
+const src = resolve("dist/client/_shell.html");
+const dest = resolve("dist/client/index.html");
 
 if (!existsSync(src)) {
   console.error(`[cap-shell-to-index] ${src} introuvable — lance "npm run build" d'abord.`);

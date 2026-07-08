@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "build:cap": "cross-env CAPACITOR_BUILD=true npm run build && node scripts/cap-shell-to-index.mjs && npx cap sync android"
+    "build:cap": "cross-env CAPACITOR_BUILD=true LOVABLE_SANDBOX=1 npm run build && node scripts/cap-shell-to-index.mjs && npx cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
