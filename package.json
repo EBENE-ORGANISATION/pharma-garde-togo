@@ -12,9 +12,6 @@
     "format": "prettier --write .",
     "build:cap": "cross-env CAPACITOR_BUILD=true npm run build && node scripts/cap-shell-to-index.mjs && npx cap sync android"
   },
-  "overrides": {
-    "@tanstack/start-plugin-core": "1.169.6"
-  },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
     "@capacitor/app": "^8.1.0",
