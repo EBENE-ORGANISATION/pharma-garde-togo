@@ -94,6 +94,7 @@ export const translations: Dict = {
   see_all: { fr: "Voir tout", en: "See all" },
   emergency_quick: { fr: "Urgences", en: "Emergencies" },
   see_all_numbers: { fr: "Voir tous les numéros", en: "See all numbers" },
+  search_pharmacy: { fr: "Rechercher une pharmacie…", en: "Search for a pharmacy…" },
   update_available: { fr: "Une nouvelle version est disponible", en: "A new version is available" },
   update_now: { fr: "Mettre à jour", en: "Update" },
   later: { fr: "Plus tard", en: "Later" },

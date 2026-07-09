@@ -135,9 +135,10 @@ function RootComponent() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let handle: { remove: () => void } | undefined;
-    App.addListener("backButton", ({ canGoBack }) => {
-      if (canGoBack) window.history.back();
-      else App.exitApp();
+    App.addListener("backButton", () => {
+      // Sur l'accueil, retour = quitter l'appli ; ailleurs, retour = page précédente.
+      if (window.location.pathname === "/") App.exitApp();
+      else window.history.back();
     }).then((h) => {
       handle = h;
     });

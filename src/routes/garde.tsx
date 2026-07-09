@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
-import { Phone, MapPin, Crosshair } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Phone, MapPin, Crosshair, Search } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
@@ -13,11 +13,16 @@ export const Route = createFileRoute("/garde")({
   component: GardePage,
 });
 
+function normalize(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
 function GardePage() {
   const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones } = useZones();
   const { mode, libelle } = useModeOuverture();
+  const [q, setQ] = useState("");
 
   const { items: gardeList, loading: gardeLoading } = usePharmacies(zone || null);
   const { items: allList, loading: allLoading } = useAllPharmacies(
@@ -72,6 +77,17 @@ function GardePage() {
           ))}
         </select>
 
+        <div className="relative mt-3">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("search_pharmacy")}
+            className="w-full rounded-xl border border-border bg-background py-2.5 pl-9 pr-3 text-sm"
+          />
+        </div>
+
         <div className="mt-4">
           {!loc.coords ? (
             <button
@@ -99,12 +115,21 @@ function GardePage() {
       </div>
 
       <ul className="mt-3 space-y-3 px-4 pb-4">
-        {sorted.map((p, idx) => {
+        {sorted
+          .filter((p) => {
+            if (!q.trim()) return true;
+            const nq = normalize(q);
+            return (
+              normalize(p.nom ?? "").includes(nq) ||
+              normalize(p.adresse ?? "").includes(nq)
+            );
+          })
+          .map((p, idx) => {
           const km =
             loc.coords && p.latitude != null && p.longitude != null
               ? haversineKm(loc.coords, { lat: p.latitude, lon: p.longitude })
               : null;
-          const isNearest = loc.coords != null && idx === 0 && km != null;
+          const isNearest = loc.coords != null && idx === 0 && km != null && !q.trim();
           return (
             <li
               key={p.id}
