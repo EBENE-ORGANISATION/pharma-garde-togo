@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Crosshair,
   MapPin,
@@ -8,6 +8,8 @@ import {
   X,
   Clock,
   ChevronDown,
+  Search,
+  Maximize2,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
@@ -27,6 +29,10 @@ function directionsHref(p: Pharmacy): string | null {
   return `https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}&travelmode=driving`;
 }
 
+function normalize(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function CartePage() {
   const { t, lang } = useLang();
   const { zone, setZone } = useZone();
@@ -38,10 +44,22 @@ function CartePage() {
   const list = mode === "jour" ? allList : gardeList;
 
   const loc = useUserLocation();
+  const [q, setQ] = useState("");
+
   const withCoords = useMemo(
     () => list.filter((p) => p.latitude != null && p.longitude != null),
     [list],
   );
+
+  // Pharmacies affichées sur la carte (filtrées par la recherche).
+  const filtered = useMemo(() => {
+    if (!q.trim()) return withCoords;
+    const nq = normalize(q);
+    return withCoords.filter(
+      (p) => normalize(p.nom ?? "").includes(nq) || normalize(p.adresse ?? "").includes(nq),
+    );
+  }, [withCoords, q]);
+
   const nearestId = useMemo(() => {
     if (!loc.coords) return null;
     let best: { id: string; km: number } | null = null;
@@ -54,18 +72,40 @@ function CartePage() {
     }
     return best?.id ?? null;
   }, [loc.coords, withCoords]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Pharmacy | null>(null);
   const [zoneOpen, setZoneOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     if (zones.length > 0 && (!zone || !zones.find((z) => z.id === zone))) {
       setZone(zones[0].id);
     }
   }, [zones, zone, setZone]);
+
+  // Recentre la vue sur les pharmacies affichées (+ position utilisateur).
+  const fitAll = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const pts: [number, number][] = filtered.map(
+      (p) => [p.latitude as number, p.longitude as number] as [number, number],
+    );
+    if (loc.coords) pts.push([loc.coords.lat, loc.coords.lon]);
+    if (pts.length === 0) return;
+    const lats = pts.map((p) => p[0]);
+    const lngs = pts.map((p) => p[1]);
+    map.fitBounds(
+      [
+        [Math.min(...lats), Math.min(...lngs)],
+        [Math.max(...lats), Math.max(...lngs)],
+      ],
+      { padding: [40, 40], maxZoom: 14 },
+    );
+  }, [filtered, loc.coords]);
 
   // init map
   useEffect(() => {
@@ -122,7 +162,7 @@ function CartePage() {
       const map = mapRef.current;
       if (layerRef.current) map.removeLayer(layerRef.current);
       const group = L.layerGroup();
-      withCoords.forEach((p) => {
+      filtered.forEach((p) => {
         const isNearest = p.id === nearestId;
         const color = isNearest ? "#16a34a" : "#2f7355";
         const size = isNearest ? 28 : 22;
@@ -151,16 +191,9 @@ function CartePage() {
       group.addTo(map);
       layerRef.current = group;
 
-      const points: [number, number][] = withCoords.map(
-        (p) => [p.latitude as number, p.longitude as number] as [number, number],
-      );
-      if (loc.coords) points.push([loc.coords.lat, loc.coords.lon]);
-      if (points.length > 0) {
-        const bounds = L.latLngBounds(points);
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
-      }
+      fitAll();
     })();
-  }, [ready, withCoords, loc.coords, nearestId]);
+  }, [ready, filtered, loc.coords, nearestId, fitAll]);
 
   const currentZone = zones.find((z) => z.id === zone);
   const statusLabel = mode === "jour" ? t("status_open") : t("status_on_duty");
@@ -175,122 +208,158 @@ function CartePage() {
 
   return (
     <AppShell title={t("map")}>
-      {/* Green header band with zone selector */}
-      <section className="rounded-b-[28px] bg-primary px-4 pt-5 pb-6 text-primary-foreground shadow-soft">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-primary">
-            <MapPin className="h-5 w-5" strokeWidth={2.5} />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-xl font-extrabold leading-tight">{t("map")}</h1>
-            <p className="truncate text-xs font-medium text-primary-foreground/85">
-              {libelle}
-            </p>
-          </div>
-        </div>
+      <div className="flex h-[calc(100dvh-9.25rem)] min-h-[340px] flex-col">
+        {/* Green header: zone selector + search button (z-40 so the dropdown sits above the map) */}
+        <section className="relative z-40 shrink-0 rounded-b-[24px] bg-primary px-4 pt-4 pb-4 text-primary-foreground shadow-soft">
+          <div className="flex items-stretch gap-2">
+            <div className="relative flex-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setZoneOpen((v) => !v);
+                  setSearchOpen(false);
+                }}
+                className="flex h-full w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left text-foreground shadow-card active:scale-[0.99]"
+              >
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <MapPin className="h-5 w-5 shrink-0 text-primary" />
+                  <span className="truncate text-base font-bold text-primary-dark">
+                    {currentZone ? currentZone.nom : "—"}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+                  {t("change_zone")}
+                  <ChevronDown
+                    className={"h-4 w-4 transition-transform " + (zoneOpen ? "rotate-180" : "")}
+                  />
+                </span>
+              </button>
+              {zoneOpen && (
+                <div className="absolute inset-x-0 top-full z-50 mt-2 max-h-[50vh] overflow-y-auto rounded-2xl border border-border bg-white shadow-card">
+                  {zones.map((z) => {
+                    const active = z.id === zone;
+                    return (
+                      <button
+                        key={z.id}
+                        onClick={() => {
+                          setZone(z.id);
+                          setZoneOpen(false);
+                        }}
+                        className={
+                          "flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-semibold " +
+                          (active
+                            ? "bg-primary-soft text-primary-dark"
+                            : "text-foreground hover:bg-primary-soft/60")
+                        }
+                      >
+                        <span>{z.nom}</span>
+                        {active && <span className="h-2 w-2 rounded-full bg-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-        <div className="relative mt-4">
-          <button
-            type="button"
-            onClick={() => setZoneOpen((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 text-left text-foreground shadow-card active:scale-[0.99]"
-          >
-            <span className="flex min-w-0 items-center gap-2.5">
-              <MapPin className="h-5 w-5 shrink-0 text-primary" />
-              <span className="truncate text-base font-bold text-primary-dark">
-                {currentZone ? currentZone.nom : "—"}
-              </span>
-            </span>
-            <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
-              {t("change_zone")}
-              <ChevronDown
-                className={"h-4 w-4 transition-transform " + (zoneOpen ? "rotate-180" : "")}
+            <button
+              type="button"
+              onClick={() => {
+                setSearchOpen((v) => {
+                  if (v) setQ("");
+                  return !v;
+                });
+                setZoneOpen(false);
+              }}
+              aria-label={t("search_pharmacy")}
+              className="grid w-12 shrink-0 place-items-center rounded-2xl bg-white text-primary shadow-card active:scale-95"
+            >
+              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            </button>
+          </div>
+
+          {searchOpen && (
+            <div className="relative mt-2">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                autoFocus
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("search_pharmacy")}
+                className="w-full rounded-2xl bg-white py-3 pl-9 pr-3 text-sm text-foreground shadow-card"
               />
-            </span>
-          </button>
-          {zoneOpen && (
-            <div className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-border bg-white shadow-card">
-              {zones.map((z) => {
-                const active = z.id === zone;
-                return (
-                  <button
-                    key={z.id}
-                    onClick={() => {
-                      setZone(z.id);
-                      setZoneOpen(false);
-                    }}
-                    className={
-                      "flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-semibold " +
-                      (active
-                        ? "bg-primary-soft text-primary-dark"
-                        : "text-foreground hover:bg-primary-soft/60")
-                    }
-                  >
-                    <span>{z.nom}</span>
-                    {active && <span className="h-2 w-2 rounded-full bg-primary" />}
-                  </button>
-                );
-              })}
             </div>
           )}
-        </div>
-      </section>
+        </section>
 
-      {/* Legend */}
-      <section className="px-4 pt-4">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-card px-4 py-3 text-xs font-semibold text-primary-dark shadow-card">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-primary ring-2 ring-white" />
-            {statusLabel}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-green-600 ring-2 ring-white outline outline-2 outline-green-300/60" />
-            {t("nearest")}
-          </span>
-          {loc.coords && (
+        {/* Legend */}
+        <section className="shrink-0 px-4 pt-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl bg-card px-4 py-2 text-[11px] font-semibold text-primary-dark shadow-card">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-blue-600 ring-2 ring-white" />
-              {t("legend_you")}
+              <span className="h-3 w-3 rounded-full bg-primary ring-2 ring-white" />
+              {statusLabel}
             </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-green-600 ring-2 ring-white outline outline-2 outline-green-300/60" />
+              {t("nearest")}
+            </span>
+            {loc.coords && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-full bg-blue-600 ring-2 ring-white" />
+                {t("legend_you")}
+              </span>
+            )}
+          </div>
+        </section>
+
+        {/* Map fills remaining space */}
+        <section className="relative mt-2 min-h-0 flex-1 px-4 pb-3">
+          <div
+            ref={containerRef}
+            className="h-full w-full overflow-hidden rounded-[24px] border border-border bg-muted shadow-card"
+            aria-label={t("map")}
+          >
+            {!ready && (
+              <div className="grid h-full place-items-center text-sm font-semibold text-muted-foreground">
+                {t("loading_map")}
+              </div>
+            )}
+          </div>
+
+          {/* Floating actions */}
+          <div className="absolute bottom-6 right-7 flex flex-col gap-2.5">
+            <button
+              type="button"
+              onClick={fitAll}
+              aria-label={t("recenter")}
+              className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-primary shadow-soft active:scale-95 border border-border"
+            >
+              <Maximize2 className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={loc.request}
+              disabled={loc.status === "loading"}
+              aria-label={t("my_location")}
+              className="grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-soft active:scale-95 disabled:opacity-60"
+            >
+              <Crosshair className={"h-6 w-6 " + (loc.status === "loading" ? "animate-spin" : "")} />
+            </button>
+          </div>
+
+          {/* Overlay hints (don't push page height) */}
+          {filtered.length === 0 && (
+            <p className="absolute inset-x-6 top-6 rounded-2xl border border-dashed border-border bg-card/95 px-4 py-3 text-center text-xs font-semibold text-muted-foreground shadow-card">
+              {q.trim() ? t("no_results") : t("no_pharmacies")}
+            </p>
           )}
-        </div>
-      </section>
-
-      {/* Map + floating actions */}
-      <section className="relative mt-3 px-4">
-        <div
-          ref={containerRef}
-          className="h-[62vh] w-full overflow-hidden rounded-[24px] border border-border bg-muted shadow-card"
-          aria-label={t("map")}
-        >
-          {!ready && (
-            <div className="grid h-full place-items-center text-sm font-semibold text-muted-foreground">
-              {t("loading_map")}
-            </div>
+          {(loc.status === "denied" || loc.status === "unavailable") && (
+            <p className="absolute inset-x-6 bottom-3 rounded-xl bg-card/95 px-3 py-2 text-center text-[11px] text-muted-foreground shadow-card">
+              {t("location_unavailable")}
+            </p>
           )}
-        </div>
-
-        {/* Floating "My location" button */}
-        <button
-          type="button"
-          onClick={loc.request}
-          disabled={loc.status === "loading"}
-          aria-label={t("my_location")}
-          className="absolute bottom-4 right-7 grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-soft active:scale-95 disabled:opacity-60"
-        >
-          <Crosshair className={"h-6 w-6 " + (loc.status === "loading" ? "animate-spin" : "")} />
-        </button>
-
-        {list.length === 0 && (
-          <p className="mt-3 rounded-2xl border border-dashed border-border bg-card px-4 py-3 text-xs font-semibold text-muted-foreground">
-            {t("no_pharmacies")}
-          </p>
-        )}
-        {(loc.status === "denied" || loc.status === "unavailable") && (
-          <p className="mt-2 text-xs text-muted-foreground">{t("location_unavailable")}</p>
-        )}
-        <p className="mt-2 text-[11px] text-muted-foreground">{t("tap_marker_hint")}</p>
-      </section>
+        </section>
+      </div>
 
       {/* Bottom sheet for selected pharmacy */}
       {selected && (
