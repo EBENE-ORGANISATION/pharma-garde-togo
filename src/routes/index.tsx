@@ -10,6 +10,8 @@ import {
   ChevronRight,
   ChevronDown,
   AlertTriangle,
+  Search,
+  X,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
@@ -23,6 +25,10 @@ import { SignalerDialog } from "@/components/SignalerDialog";
 export const Route = createFileRoute("/")({
   component: Index,
 });
+
+function normalize(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
 
 function directionsHref(p: Pharmacy): string | null {
   if (p.latitude == null || p.longitude == null) return null;
@@ -53,6 +59,8 @@ function Index() {
   const pharmacies = mode === "jour" ? allPharmacies : gardePharmacies;
   const loc = useUserLocation();
   const [zoneOpen, setZoneOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     if (loading || zones.length === 0) return;
@@ -84,8 +92,17 @@ function Index() {
     return list;
   }, [pharmacies, loc.coords]);
 
-  const hero = enriched[0];
-  const others = enriched.slice(1, 5);
+  const matched = useMemo(() => {
+    if (!q.trim()) return enriched;
+    const nq = normalize(q);
+    return enriched.filter(({ p }) =>
+      normalize(p.nom ?? "").includes(nq) ||
+      normalize(p.adresse ?? "").includes(nq),
+    );
+  }, [enriched, q]);
+
+  const hero = matched[0];
+  const others = matched.slice(1, 5);
 
   const statusLabel = mode === "jour" ? t("status_open") : t("status_on_duty");
   const sectionLabel = mode === "jour" ? t("today_open") : t("tonight_on_duty");
@@ -110,8 +127,32 @@ function Index() {
               {t("app_name")}
             </div>
           </div>
-          <LangSwitchInverse />
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSearchOpen((v) => { if (v) setQ(""); return !v; })}
+              aria-label={t("search_pharmacy")}
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-white backdrop-blur active:scale-95"
+            >
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            </button>
+            <LangSwitchInverse />
+          </div>
         </div>
+
+        {searchOpen && (
+          <div className="relative mt-3">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t("search_pharmacy")}
+              className="w-full rounded-2xl bg-white py-3 pl-9 pr-3 text-sm text-foreground shadow-card"
+            />
+          </div>
+        )}
 
         <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold backdrop-blur">
           <span className="relative flex h-2 w-2">
