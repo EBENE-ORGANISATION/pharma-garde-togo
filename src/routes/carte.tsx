@@ -313,7 +313,7 @@ function CartePage() {
         </section>
 
         {/* Map fills remaining space */}
-        <section className="relative mt-2 min-h-0 flex-1 px-4 pb-3">
+        <section className="relative z-0 mt-2 min-h-0 flex-1 px-4 pb-3">
           <div
             ref={containerRef}
             className="h-full w-full overflow-hidden rounded-[24px] border border-border bg-muted shadow-card"
@@ -327,7 +327,7 @@ function CartePage() {
           </div>
 
           {/* Floating actions */}
-          <div className="absolute bottom-6 right-7 flex flex-col gap-2.5">
+          <div className="absolute bottom-6 right-7 z-[1000] flex flex-col gap-2.5">
             <button
               type="button"
               onClick={fitAll}
