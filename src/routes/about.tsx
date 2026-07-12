@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Pill, AlertTriangle, Phone, Globe, BookOpen, Heart } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { translations, useLang } from "@/lib/i18n";
-import { getDiag } from "@/lib/usage";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -128,12 +127,6 @@ function AboutPage() {
         <p className="mt-5 flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground">
           <Heart className="h-3.5 w-3.5 text-primary" /> Togo · {t("version")} {APP_VERSION}
         </p>
-        <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 p-3">
-          <p className="text-[11px] font-semibold text-muted-foreground">Diagnostic compteur</p>
-          <p className="mt-1 break-all font-mono text-[10px] leading-snug text-muted-foreground">
-            {getDiag()}
-          </p>
-        </div>
       </section>
     </AppShell>
   );
