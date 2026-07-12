@@ -3,6 +3,7 @@ import { App } from "@capacitor/app";
 import { supabase } from "@/integrations/supabase/client";
 
 const KEY = "pg_anon_id";
+const DIAG_KEY = "pg_usage_diag";
 let done = false;
 
 function getAnonId(): string {
@@ -18,8 +19,14 @@ function getAnonId(): string {
   return id;
 }
 
-// Récupère la version native SANS jamais bloquer : si l'appel natif ne répond
-// pas en 2 s, on continue quand même (c'était la cause du ping APK manquant).
+function saveDiag(msg: string) {
+  try { localStorage.setItem(DIAG_KEY, `${new Date().toISOString()} — ${msg}`); } catch { /* ignore */ }
+}
+
+export function getDiag(): string {
+  try { return localStorage.getItem(DIAG_KEY) ?? "aucun ping enregistré"; } catch { return "indisponible"; }
+}
+
 async function nativeVersion(): Promise<string> {
   try {
     const info = await Promise.race([
@@ -38,16 +45,21 @@ export async function pingUsage() {
   try {
     const isNative = Capacitor.isNativePlatform();
     const platform = isNative ? "apk" : "web";
+    saveDiag(`début — natif=${isNative}, plateforme=${platform}`);
+
     const version = isNative ? await nativeVersion() : "web";
+    const anonId = getAnonId();
+    saveDiag(`envoi — ${platform} / ${version} / id=${anonId.slice(0, 8)}…`);
 
     const { error } = await supabase.rpc("ping_usage", {
-      p_anon_id: getAnonId(),
+      p_anon_id: anonId,
       p_platform: platform,
       p_version: version,
     });
-    if (error) console.error("[usage] ping échoué:", error.message);
-    else console.log("[usage] ping ok:", platform, version);
+
+    if (error) saveDiag(`ÉCHEC — ${error.message} (code ${error.code ?? "?"})`);
+    else saveDiag(`OK — ${platform} / ${version} envoyé`);
   } catch (e) {
-    console.error("[usage] ping exception:", e);
+    saveDiag(`EXCEPTION — ${e instanceof Error ? e.message : String(e)}`);
   }
 }
