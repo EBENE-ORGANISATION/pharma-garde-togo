@@ -7,29 +7,47 @@ let done = false;
 
 function getAnonId(): string {
   let id = "";
-  try { id = localStorage.getItem(KEY) ?? ""; } catch {}
+  try { id = localStorage.getItem(KEY) ?? ""; } catch { /* ignore */ }
   if (!id) {
-    id = (typeof crypto !== "undefined" && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : String(Date.now()) + Math.random().toString(36).slice(2);
-    try { localStorage.setItem(KEY, id); } catch {}
+    id =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : String(Date.now()) + Math.random().toString(36).slice(2);
+    try { localStorage.setItem(KEY, id); } catch { /* ignore */ }
   }
   return id;
+}
+
+// Récupère la version native SANS jamais bloquer : si l'appel natif ne répond
+// pas en 2 s, on continue quand même (c'était la cause du ping APK manquant).
+async function nativeVersion(): Promise<string> {
+  try {
+    const info = await Promise.race([
+      App.getInfo(),
+      new Promise<null>((r) => setTimeout(() => r(null), 2000)),
+    ]);
+    return (info as { version?: string } | null)?.version ?? "apk";
+  } catch {
+    return "apk";
+  }
 }
 
 export async function pingUsage() {
   if (done) return;
   done = true;
   try {
-    const platform = Capacitor.isNativePlatform() ? "apk" : "web";
-    let version = "web";
-    if (Capacitor.isNativePlatform()) {
-      try { version = (await App.getInfo()).version; } catch {}
-    }
-    await supabase.rpc("ping_usage", {
+    const isNative = Capacitor.isNativePlatform();
+    const platform = isNative ? "apk" : "web";
+    const version = isNative ? await nativeVersion() : "web";
+
+    const { error } = await supabase.rpc("ping_usage", {
       p_anon_id: getAnonId(),
       p_platform: platform,
       p_version: version,
     });
-  } catch { /* silencieux : un échec de ping ne doit jamais gêner l'utilisateur */ }
+    if (error) console.error("[usage] ping échoué:", error.message);
+    else console.log("[usage] ping ok:", platform, version);
+  } catch (e) {
+    console.error("[usage] ping exception:", e);
+  }
 }
