@@ -208,7 +208,7 @@ function CartePage() {
 
   return (
     <AppShell title={t("map")}>
-      <div className="flex h-[calc(100dvh-9.25rem)] min-h-[340px] flex-col">
+      <div className="flex min-h-[340px] flex-col" style={{ height: "calc(100dvh - 9.25rem - env(safe-area-inset-bottom, 0px))" }}>
         {/* Green header: zone selector + search button (z-40 so the dropdown sits above the map) */}
         <section className="relative z-40 shrink-0 rounded-b-[24px] bg-primary px-4 pt-4 pb-4 text-primary-foreground shadow-soft">
           <div className="flex items-stretch gap-2">

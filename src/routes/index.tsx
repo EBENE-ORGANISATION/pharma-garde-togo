@@ -117,7 +117,7 @@ function Index() {
   return (
     <AppShell hideHeader>
       {/* Green hero header */}
-      <section className="rounded-b-[32px] bg-primary px-4 pt-5 pb-6 text-primary-foreground shadow-soft">
+      <section className="rounded-b-[32px] bg-primary px-4 pt-5 pb-6 text-primary-foreground shadow-soft" style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-primary">
