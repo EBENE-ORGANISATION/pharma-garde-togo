@@ -5,7 +5,7 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // Le prérendu de TanStack Start importe dist/server/server.js, mais Nitro nomme
@@ -28,6 +28,24 @@ function shimPrerenderServer() {
   };
 }
 
+// Injecte une version unique dans le service worker à chaque build : le navigateur
+// détecte le changement, installe le nouveau SW et purge l'ancien cache (hors-ligne fiable).
+function stampServiceWorker() {
+  return {
+    name: "pharmagarde:stamp-sw",
+    writeBundle() {
+      const version = `v${Date.now()}`;
+      for (const dir of ["dist/client", ".output/public"]) {
+        const sw = resolve(dir, "sw.js");
+        if (!existsSync(sw)) continue;
+        const src = readFileSync(sw, "utf8");
+        if (!src.includes("__BUILD_VERSION__")) continue;
+        writeFileSync(sw, src.replace(/__BUILD_VERSION__/g, version));
+      }
+    },
+  };
+}
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -36,6 +54,6 @@ export default defineConfig({
     spa: { enabled: process.env.CAPACITOR_BUILD === "true" },
   },
   vite: {
-    plugins: [shimPrerenderServer()],
+    plugins: [shimPrerenderServer(), stampServiceWorker()],
   },
 });

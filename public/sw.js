@@ -3,7 +3,7 @@
 //
 // Bump CACHE_VERSION on every deploy that changes cached assets so old
 // caches get cleaned up on activate.
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "__BUILD_VERSION__";
 const CACHE_NAME = `pharmagarde-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [

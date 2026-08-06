@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { App } from "@capacitor/app";
+import { SplashScreen } from "@capacitor/splash-screen";
 import { Capacitor } from "@capacitor/core";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -130,6 +131,7 @@ function RootComponent() {
 
   useEffect(() => {
     registerServiceWorker();
+    SplashScreen.hide().catch(() => {});
   }, []);
 
   useEffect(() => {
