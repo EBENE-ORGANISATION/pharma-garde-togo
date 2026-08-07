@@ -102,6 +102,7 @@ export const translations: Dict = {
   samu: { fr: "SAMU", en: "Ambulance" },
   police: { fr: "Police", en: "Police" },
   firemen: { fr: "Pompiers", en: "Fire dept." },
+  gendarmerie: { fr: "Gendarmerie", en: "Gendarmerie" },
   open_until_short: { fr: "ouverte jusqu'à", en: "open until" },
   // Map
   my_location: { fr: "Ma position", en: "My location" },

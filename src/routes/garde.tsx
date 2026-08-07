@@ -8,6 +8,8 @@ import { usePharmacies, useAllPharmacies, useZones } from "@/lib/supabase-hooks"
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 import { useModeOuverture } from "@/lib/horaires";
 import { SignalerDialog } from "@/components/SignalerDialog";
+import { PharmacySheet } from "@/components/PharmacySheet";
+import type { Pharmacy } from "@/lib/db";
 
 export const Route = createFileRoute("/garde")({
   component: GardePage,
@@ -23,6 +25,7 @@ function GardePage() {
   const { zones } = useZones();
   const { mode, libelle } = useModeOuverture();
   const [q, setQ] = useState("");
+  const [sheet, setSheet] = useState<{ p: Pharmacy; km: number | null } | null>(null);
 
   const { items: gardeList, loading: gardeLoading } = usePharmacies(zone || null);
   const { items: allList, loading: allLoading } = useAllPharmacies(
@@ -134,9 +137,10 @@ function GardePage() {
             <li
               key={p.id}
               className={
-                "rounded-2xl border bg-card p-4 shadow-card " +
+                "cursor-pointer rounded-2xl border bg-card p-4 shadow-card " +
                 (isNearest ? "border-primary ring-2 ring-primary/30" : "border-border")
               }
+              onClick={() => setSheet({ p, km })}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -181,6 +185,9 @@ function GardePage() {
           </li>
         )}
       </ul>
+      {sheet && (
+        <PharmacySheet pharmacy={sheet.p} distanceKm={sheet.km} onClose={() => setSheet(null)} />
+      )}
     </AppShell>
   );
 }

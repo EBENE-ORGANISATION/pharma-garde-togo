@@ -16,11 +16,12 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useZone } from "@/lib/zone-store";
-import { useZones, usePharmacies, useAllPharmacies } from "@/lib/supabase-hooks";
+import { useZones, usePharmacies, useAllPharmacies, useEmergencies } from "@/lib/supabase-hooks";
 import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 import { useModeOuverture } from "@/lib/horaires";
 import type { Pharmacy } from "@/lib/db";
 import { SignalerDialog } from "@/components/SignalerDialog";
+import { PharmacySheet } from "@/components/PharmacySheet";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -61,6 +62,7 @@ function Index() {
   const [zoneOpen, setZoneOpen] = useState(false);
   const [q, setQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sheet, setSheet] = useState<{ p: Pharmacy; km: number | null } | null>(null);
 
   useEffect(() => {
     if (loading || zones.length === 0) return;
@@ -108,11 +110,16 @@ function Index() {
   const sectionLabel = mode === "jour" ? t("today_open") : t("tonight_on_duty");
   const othersLabel = mode === "jour" ? t("other_open") : t("other_on_duty");
 
-  const emergencies = [
-    { label: t("samu"), num: "111", tone: "emergency" as const },
-    { label: t("police"), num: "117", tone: "primary" as const },
-    { label: t("firemen"), num: "118", tone: "primary" as const },
-  ];
+  const { items: dbEmergencies } = useEmergencies(zone || null);
+  const emergencies =
+    dbEmergencies.length > 0
+      ? dbEmergencies
+      : [
+          { id: "samu", libelle: t("samu"), numero: "111" },
+          { id: "police", libelle: t("police"), numero: "117" },
+          { id: "pompiers", libelle: t("firemen"), numero: "118" },
+          { id: "gendarmerie", libelle: t("gendarmerie"), numero: "1722" },
+        ];
 
   return (
     <AppShell hideHeader>
@@ -227,7 +234,7 @@ function Index() {
 
         {/* Hero pharmacy card */}
         {hero ? (
-          <article className="mt-3 rounded-[24px] border border-border bg-card p-5 shadow-card">
+          <article className="mt-3 cursor-pointer rounded-[24px] border border-border bg-card p-5 shadow-card" onClick={() => setSheet({ p: hero.p, km: hero.km })}>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-primary-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-white" />
               {statusLabel}
@@ -289,7 +296,7 @@ function Index() {
           </div>
           <ul className="mt-3 divide-y divide-border overflow-hidden rounded-[24px] border border-border bg-card shadow-card">
             {others.map(({ p, km }) => (
-              <li key={p.id} className="flex items-center gap-3 px-4 py-3.5">
+              <li key={p.id} className="flex cursor-pointer items-center gap-3 px-4 py-3.5" onClick={() => setSheet({ p, km })}>
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-sm font-extrabold text-primary-dark">
                   {initials(p.nom)}
                 </div>
@@ -323,21 +330,22 @@ function Index() {
       <section className="px-4 pt-7">
         <h3 className="text-base font-extrabold text-primary-dark">{t("emergency_quick")}</h3>
         <div className="mt-3 grid grid-cols-3 gap-2.5">
-          {emergencies.map((e) => (
-            <a
-              key={e.num}
-              href={`tel:${e.num}`}
-              className={
-                "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center shadow-card active:scale-[0.97] " +
-                (e.tone === "emergency"
-                  ? "bg-emergency text-emergency-foreground"
-                  : "bg-primary-soft text-primary-dark")
-              }
-            >
-              <span className="text-xl font-extrabold leading-none">{e.num}</span>
-              <span className="text-[11px] font-semibold opacity-90">{e.label}</span>
-            </a>
-          ))}
+          {emergencies.map((e) => {
+            const isMed = e.numero === "111" || /samu|ambulance/i.test(e.libelle ?? "");
+            return (
+              <a
+                key={e.id}
+                href={`tel:${e.numero}`}
+                className={
+                  "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center shadow-card active:scale-[0.97] " +
+                  (isMed ? "bg-emergency text-emergency-foreground" : "bg-primary-soft text-primary-dark")
+                }
+              >
+                <span className="text-xl font-extrabold leading-none">{e.numero}</span>
+                <span className="text-[11px] font-semibold opacity-90">{e.libelle}</span>
+              </a>
+            );
+          })}
         </div>
         <Link
           to="/urgences"
@@ -371,6 +379,10 @@ function Index() {
       <span className="hidden">
         <ChevronRight />
       </span>
+
+      {sheet && (
+        <PharmacySheet pharmacy={sheet.p} distanceKm={sheet.km} onClose={() => setSheet(null)} />
+      )}
     </AppShell>
   );
 }
