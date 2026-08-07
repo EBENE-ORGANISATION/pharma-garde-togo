@@ -1,0 +1,33 @@
+name: Deploy web (Cloudflare Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          npm install -g npm@10.9.2
+          npm install --no-audit --no-fund
+
+      - name: Build web statique (SPA)
+        run: |
+          CAPACITOR_BUILD=true LOVABLE_SANDBOX=1 npm run build
+          node scripts/cap-shell-to-index.mjs
+
+      - name: Deploy vers Cloudflare Pages
+        run: npx wrangler@3 pages deploy dist/client --project-name=pharmagarde --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
