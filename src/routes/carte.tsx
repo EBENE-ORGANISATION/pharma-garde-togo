@@ -47,6 +47,8 @@ function CartePage() {
   const loc = useUserLocation();
   const locate = useAutoZone();
   const [q, setQ] = useState("");
+  const [origin, setOrigin] = useState<{ lat: number; lon: number } | null>(null);
+  const searchPoint = origin ?? loc.coords;
 
   const withCoords = useMemo(
     () => list.filter((p) => p.latitude != null && p.longitude != null),
@@ -63,17 +65,17 @@ function CartePage() {
   }, [withCoords, q]);
 
   const nearestId = useMemo(() => {
-    if (!loc.coords) return null;
+    if (!searchPoint) return null;
     let best: { id: string; km: number } | null = null;
     for (const p of withCoords) {
-      const km = haversineKm(loc.coords, {
+      const km = haversineKm(searchPoint, {
         lat: p.latitude as number,
         lon: p.longitude as number,
       });
       if (!best || km < best.km) best = { id: p.id, km };
     }
     return best?.id ?? null;
-  }, [loc.coords, withCoords]);
+  }, [searchPoint, withCoords]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -96,7 +98,7 @@ function CartePage() {
     const pts: [number, number][] = filtered.map(
       (p) => [p.latitude as number, p.longitude as number] as [number, number],
     );
-    if (loc.coords) pts.push([loc.coords.lat, loc.coords.lon]);
+    if (searchPoint) pts.push([searchPoint.lat, searchPoint.lon]);
     if (pts.length === 0) return;
     const lats = pts.map((p) => p[0]);
     const lngs = pts.map((p) => p[1]);
@@ -107,7 +109,7 @@ function CartePage() {
       ],
       { padding: [40, 40], maxZoom: 14 },
     );
-  }, [filtered, loc.coords]);
+  }, [filtered, searchPoint]);
 
   // init map
   useEffect(() => {
@@ -145,6 +147,7 @@ function CartePage() {
         attribution: "© OpenStreetMap",
       }).addTo(map);
       mapRef.current = map;
+      map.on("click", (e: any) => { setOrigin({ lat: e.latlng.lat, lon: e.latlng.lng }); });
       setReady(true);
     })();
     return () => {
@@ -190,19 +193,29 @@ function CartePage() {
         L.marker([loc.coords.lat, loc.coords.lon], { icon: userIcon }).addTo(group);
       }
 
+      if (origin) {
+        const originIcon = L.divIcon({
+          html: `<div style="width:22px;height:22px;border-radius:9999px;background:#dc2626;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);"></div>`,
+          className: "",
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+        });
+        L.marker([origin.lat, origin.lon], { icon: originIcon }).addTo(group);
+      }
+
       group.addTo(map);
       layerRef.current = group;
 
       fitAll();
     })();
-  }, [ready, filtered, loc.coords, nearestId, fitAll]);
+  }, [ready, filtered, loc.coords, nearestId, fitAll, origin]);
 
   const currentZone = zones.find((z) => z.id === zone);
   const statusLabel = mode === "jour" ? t("status_open") : t("status_on_duty");
 
   const selectedKm =
-    selected && loc.coords && selected.latitude != null && selected.longitude != null
-      ? haversineKm(loc.coords, {
+    selected && searchPoint && selected.latitude != null && selected.longitude != null
+      ? haversineKm(searchPoint, {
           lat: selected.latitude as number,
           lon: selected.longitude as number,
         })
@@ -327,6 +340,26 @@ function CartePage() {
               </div>
             )}
           </div>
+
+          {/* Origin hint / reset strip */}
+          {origin && (
+            <div className="absolute inset-x-4 top-3 z-[1000] flex items-center justify-between gap-2 rounded-2xl border border-border bg-white px-3 py-2 shadow-soft">
+              <span className="text-xs font-semibold text-primary-dark">{t("back_to_my_location")}</span>
+              <button
+                type="button"
+                onClick={() => setOrigin(null)}
+                aria-label={t("back_to_my_location")}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary-soft text-primary-dark active:scale-95"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          {!origin && !loc.coords && (
+            <p className="absolute inset-x-4 top-3 z-[999] rounded-2xl bg-white/90 px-3 py-2 text-center text-xs font-semibold text-muted-foreground shadow-soft">
+              {t("tap_map_hint")}
+            </p>
+          )}
 
           {/* Floating actions */}
           <div className="absolute bottom-6 right-7 z-[1000] flex flex-col gap-2.5">
