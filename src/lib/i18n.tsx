@@ -158,6 +158,9 @@ export const translations: Dict = {
   report_hint: { fr: "Une erreur sur cette pharmacie ? Aidez-nous à l'améliorer.", en: "Something wrong with this pharmacy? Help us improve it." },
   back_to_my_location: { fr: "Revenir à ma position", en: "Back to my location" },
   tap_map_hint: { fr: "Touchez la carte pour choisir un lieu de recherche", en: "Tap the map to choose a search origin" },
+  use_as_location: { fr: "Chercher les pharmacies proches de ce lieu", en: "Find pharmacies near this place" },
+  searching: { fr: "Recherche du lieu…", en: "Finding place…" },
+  place_not_found: { fr: "Lieu introuvable. Précise la ville (ex. : Kara, Lomé).", en: "Place not found. Add the city (e.g. Kara, Lomé)." },
 };
 
 export const ZONES = [

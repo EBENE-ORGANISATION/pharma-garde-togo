@@ -34,6 +34,18 @@ function normalize(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+function geocodePlace(query: string): Promise<{ lat: number; lon: number } | null> {
+  return fetch(
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=tg&limit=1&q=${encodeURIComponent(query)}`,
+  )
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (!Array.isArray(data) || data.length === 0) return null;
+      return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+    })
+    .catch(() => null);
+}
+
 function CartePage() {
   const { t, lang } = useLang();
   const { zone, setZone } = useZone();
@@ -49,6 +61,8 @@ function CartePage() {
   const [q, setQ] = useState("");
   const [origin, setOrigin] = useState<{ lat: number; lon: number } | null>(null);
   const searchPoint = origin ?? loc.coords;
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [geoErr, setGeoErr] = useState(false);
 
   const withCoords = useMemo(
     () => list.filter((p) => p.latitude != null && p.longitude != null),
@@ -293,16 +307,45 @@ function CartePage() {
           </div>
 
           {searchOpen && (
-            <div className="relative mt-2">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="search"
-                autoFocus
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={t("search_pharmacy")}
-                className="w-full rounded-2xl bg-white py-3 pl-9 pr-3 text-sm text-foreground shadow-card"
-              />
+            <div className="mt-2 space-y-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="search"
+                  autoFocus
+                  value={q}
+                  onChange={(e) => { setQ(e.target.value); setGeoErr(false); }}
+                  placeholder={t("search_pharmacy")}
+                  className="w-full rounded-2xl bg-white py-3 pl-9 pr-3 text-sm text-foreground shadow-card"
+                />
+              </div>
+              {q.trim() && (
+                <button
+                  type="button"
+                  disabled={geoBusy}
+                  onClick={async () => {
+                    setGeoBusy(true);
+                    setGeoErr(false);
+                    const pt = await geocodePlace(q);
+                    setGeoBusy(false);
+                    if (pt) {
+                      setOrigin(pt);
+                      setSearchOpen(false);
+                      setQ("");
+                      if (mapRef.current) mapRef.current.setView([pt.lat, pt.lon], 14);
+                    } else {
+                      setGeoErr(true);
+                    }
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white/20 px-4 py-2.5 text-sm font-semibold text-white active:scale-95 disabled:opacity-60"
+                >
+                  <MapPin className="h-4 w-4" />
+                  {geoBusy ? t("searching") : t("use_as_location")}
+                </button>
+              )}
+              {geoErr && (
+                <p className="text-center text-[11px] text-white/85">{t("place_not_found")}</p>
+              )}
             </div>
           )}
         </section>
