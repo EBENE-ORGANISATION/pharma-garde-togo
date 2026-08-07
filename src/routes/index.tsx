@@ -332,7 +332,7 @@ function Index() {
       <section className="px-4 pt-7">
         <h3 className="text-base font-extrabold text-primary-dark">{t("emergency_quick")}</h3>
         <div className="mt-3 grid grid-cols-3 gap-2.5">
-          {emergencies.map((e) => {
+          {emergencies.slice(0, 3).map((e) => {
             const isMed = e.numero === "111" || /samu|ambulance/i.test(e.libelle ?? "");
             return (
               <a
