@@ -92,32 +92,7 @@ export function useEmergencies(zoneId: string | null) {
         }
       }
 
-      // 2. zone snapshot (published by publier_zone), if available
-      if (zoneId) {
-        try {
-          const { data: snap } = await supabase
-            .from("snapshots")
-            .select("zone_id, version, semaine, published_at, data")
-            .eq("zone_id", zoneId)
-            .order("version", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (cancelled) return;
-          const snapEmergencies = (snap?.data as { numeros_urgence?: Emergency[] } | null)
-            ?.numeros_urgence;
-          if (snap && Array.isArray(snapEmergencies)) {
-            const fresh = [...snapEmergencies].sort(byOrdre);
-            setItems(fresh);
-            if (db && fresh.length > 0) await db.emergencies.bulkPut(fresh);
-            setLoading(false);
-            return;
-          }
-        } catch {
-          // snapshots unreachable: fall through to raw table
-        }
-      }
-
-      // 3. fallback: raw table query
+      // 2. raw table query
       try {
         let query = supabase
           .from("numeros_urgence")
