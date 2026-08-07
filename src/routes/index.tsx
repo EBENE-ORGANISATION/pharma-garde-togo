@@ -22,6 +22,7 @@ import { useModeOuverture } from "@/lib/horaires";
 import type { Pharmacy } from "@/lib/db";
 import { SignalerDialog } from "@/components/SignalerDialog";
 import { PharmacySheet } from "@/components/PharmacySheet";
+import { useAutoZone } from "@/lib/use-auto-zone";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -59,6 +60,7 @@ function Index() {
 
   const pharmacies = mode === "jour" ? allPharmacies : gardePharmacies;
   const loc = useUserLocation();
+  const locate = useAutoZone();
   const [zoneOpen, setZoneOpen] = useState(false);
   const [q, setQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -358,7 +360,7 @@ function Index() {
       {/* Geolocation */}
       <section className="px-4 pt-5">
         <button
-          onClick={loc.request}
+          onClick={locate}
           disabled={loc.status === "loading"}
           className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3 text-sm font-bold text-primary-dark shadow-card active:scale-[0.99] disabled:opacity-60"
         >

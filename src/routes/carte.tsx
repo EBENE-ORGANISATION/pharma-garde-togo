@@ -19,6 +19,7 @@ import { useUserLocation, haversineKm, formatKm } from "@/lib/geo";
 import { useModeOuverture } from "@/lib/horaires";
 import type { Pharmacy } from "@/lib/db";
 import { SignalerDialog } from "@/components/SignalerDialog";
+import { useAutoZone } from "@/lib/use-auto-zone";
 
 export const Route = createFileRoute("/carte")({
   component: CartePage,
@@ -44,6 +45,7 @@ function CartePage() {
   const list = mode === "jour" ? allList : gardeList;
 
   const loc = useUserLocation();
+  const locate = useAutoZone();
   const [q, setQ] = useState("");
 
   const withCoords = useMemo(
@@ -338,7 +340,7 @@ function CartePage() {
             </button>
             <button
               type="button"
-              onClick={loc.request}
+              onClick={locate}
               disabled={loc.status === "loading"}
               aria-label={t("my_location")}
               className="grid h-14 w-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-soft active:scale-95 disabled:opacity-60"
