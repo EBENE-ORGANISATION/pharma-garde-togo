@@ -4,6 +4,7 @@ const config: CapacitorConfig = {
   appId: 'tg.pharmagarde.app',
   appName: 'PharmaGarde',
   webDir: 'dist/client',
+  backgroundColor: "#234d3a",
   plugins: {
     SplashScreen: {
       launchAutoHide: false,

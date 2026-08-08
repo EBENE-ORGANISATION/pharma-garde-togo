@@ -131,11 +131,9 @@ function RootComponent() {
 
   useEffect(() => {
     registerServiceWorker();
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        SplashScreen.hide().catch(() => {});
-      }),
-    );
+    // Filet de sécurité : ne jamais laisser le splash bloqué plus de 8 s.
+    const _t = setTimeout(() => SplashScreen.hide().catch(() => {}), 8000);
+    return () => clearTimeout(_t);
   }, []);
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { SplashScreen } from "@capacitor/splash-screen";
 import {
   Pill,
   MapPin,
@@ -59,6 +60,18 @@ function Index() {
   const { items: allPharmacies } = useAllPharmacies(zone || null);
 
   const pharmacies = mode === "jour" ? allPharmacies : gardePharmacies;
+
+  const splashHidden = useRef(false);
+  useEffect(() => {
+    if (splashHidden.current) return;
+    if (pharmacies.length > 0) {
+      splashHidden.current = true;
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => SplashScreen.hide().catch(() => {})),
+      );
+    }
+  }, [pharmacies]);
+
   const loc = useUserLocation();
   const locate = useAutoZone();
   const [zoneOpen, setZoneOpen] = useState(false);

@@ -71,7 +71,7 @@ export function SignalerDialog({
             <AlertCircle className="h-4 w-4" /> {t("report_problem")}
           </button>
         </DialogTrigger>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
           {state === "done" ? (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
