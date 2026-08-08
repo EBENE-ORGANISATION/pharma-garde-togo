@@ -131,7 +131,11 @@ function RootComponent() {
 
   useEffect(() => {
     registerServiceWorker();
-    SplashScreen.hide().catch(() => {});
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        SplashScreen.hide().catch(() => {});
+      }),
+    );
   }, []);
 
   useEffect(() => {
