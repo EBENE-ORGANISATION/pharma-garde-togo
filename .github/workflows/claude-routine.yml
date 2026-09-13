@@ -2,27 +2,75 @@ name: Routine superviseur garde
 
 on:
   schedule:
-    - cron: "0 21 * * *"   # tous les jours à 21h UTC (= 21h au Togo)
+    # Tous les jours vers 21h UTC (= 21h au Togo). Minute décalée : GitHub
+    # retarde fortement les crons lancés pile à l'heure (observé : ~2h de retard).
+    - cron: "17 21 * * *"
   workflow_dispatch: {}      # permet aussi un lancement manuel
 
 jobs:
   superviseur:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_READONLY_KEY: ${{ secrets.SUPABASE_READONLY_KEY }}
+      RESEND_API_KEY:        ${{ secrets.RESEND_API_KEY }}
+      ALERT_EMAIL:           ${{ secrets.ALERT_EMAIL }}
     steps:
       - uses: actions/checkout@v5
 
+      # Le superviseur Claude consomme le quota de l'abonnement (limite
+      # hebdomadaire partagée avec l'usage interactif). On ne le lance que s'il
+      # y a quelque chose à analyser : anomalie sur 24h/7j, ou bilan du dimanche.
+      - name: Pré-contrôle du pipeline (sans Claude)
+        id: precheck
+        run: node .github/scripts/precheck-garde.mjs
+
       - name: Installer Claude Code
+        if: steps.precheck.outputs.analyse == 'true'
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Superviseur quotidien du pipeline de garde
+        id: superviseur
+        if: steps.precheck.outputs.analyse == 'true'
+        shell: bash
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          SUPABASE_URL:            ${{ secrets.SUPABASE_URL }}
-          SUPABASE_READONLY_KEY:   ${{ secrets.SUPABASE_READONLY_KEY }}
-          RESEND_API_KEY:          ${{ secrets.RESEND_API_KEY }}
-          ALERT_EMAIL:             ${{ secrets.ALERT_EMAIL }}
+          ANTHROPIC_API_KEY:       ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          # Clé API (facturée à l'usage, sans limite hebdomadaire) si le secret
+          # ANTHROPIC_API_KEY existe, sinon jeton OAuth de l'abonnement.
+          if [ -n "$ANTHROPIC_API_KEY" ]; then unset CLAUDE_CODE_OAUTH_TOKEN; else unset ANTHROPIC_API_KEY; fi
           claude -p "$(cat .github/routine-superviseur.md)" \
+            --model sonnet \
             --allowedTools "Bash" \
-            --max-turns 15
+            --max-turns 15 2>&1 | tee claude-output.log
+
+      # Si le superviseur n'a pas pu tourner (quota épuisé, panne…), on prévient
+      # quand même : un superviseur muet est pire qu'un superviseur en panne.
+      - name: Alerte de secours si le superviseur n'a pas tourné
+        if: failure()
+        shell: bash
+        run: |
+          extrait="non disponible"
+          if [ -s claude-output.log ]; then extrait="$(tail -n 8 claude-output.log | cut -c1-500)"; fi
+          corps="Le superviseur quotidien du pipeline de garde n'a PAS pu s'exécuter.
+
+          Run : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Étapes : pré-contrôle=${{ steps.precheck.outcome }}, superviseur=${{ steps.superviseur.outcome }}
+
+          Dernières lignes de sortie :
+          $extrait
+
+          Conséquence : garde_runs n'a pas été vérifié aujourd'hui. Contrôle manuel dans Supabase (table garde_runs), ou relance : Actions → Routine superviseur garde → Run workflow.
+
+          Si la sortie mentionne une limite d'usage (weekly limit), le quota de l'abonnement Claude est épuisé : ajoute le secret ANTHROPIC_API_KEY au dépôt (facturation à l'usage, sans limite hebdomadaire)."
+          jq -n --arg to "$ALERT_EMAIL" \
+                --arg sujet "[PharmaGarde] Superviseur indisponible — $(date -u +%Y-%m-%d)" \
+                --arg texte "$corps" \
+                '{from: "PharmaGarde <onboarding@resend.dev>", to: [$to], subject: $sujet, text: $texte}' \
+          | curl -sS --fail -X POST "https://api.resend.com/emails" \
+              -H "Authorization: Bearer $RESEND_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @- -o /dev/null
+          echo "e-mail de secours envoyé"
