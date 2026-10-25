@@ -21,6 +21,10 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Le paquet « tools » (défaut de l'action) n'existe plus avec cmdline-tools 16 ;
+          # Gradle télécharge lui-même la plateforme et les build-tools nécessaires.
+          packages: platform-tools
 
       - name: Setup Node
         uses: actions/setup-node@v4
