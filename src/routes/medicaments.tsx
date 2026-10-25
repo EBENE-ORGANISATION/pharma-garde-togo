@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Pill, Info, Loader2, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useLang } from "@/lib/i18n";
 import { useMedicineSearch } from "@/lib/supabase-hooks";
+import { trackMedicineSearch } from "@/lib/usage";
 
 export const Route = createFileRoute("/medicaments")({
   component: MedicamentsPage,
@@ -13,6 +14,13 @@ function MedicamentsPage() {
   const { t } = useLang();
   const [q, setQ] = useState("");
   const { items: results, loading } = useMedicineSearch(q);
+
+  // Mesure anonyme : on compte la recherche (trouvée ou non), jamais le texte saisi.
+  useEffect(() => {
+    if (loading || q.trim().length < 3) return;
+    const h = setTimeout(() => trackMedicineSearch(results.length > 0), 1500);
+    return () => clearTimeout(h);
+  }, [q, loading, results.length]);
 
   return (
     <AppShell title={t("medicines")}>

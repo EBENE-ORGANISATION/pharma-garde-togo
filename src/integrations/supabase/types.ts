@@ -26,6 +26,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_events: {
+        Row: {
+          anon_id: string
+          created_at: string
+          detail: string | null
+          event: string
+          id: number
+        }
+        Insert: {
+          anon_id: string
+          created_at?: string
+          detail?: string | null
+          event: string
+          id?: never
+        }
+        Update: {
+          anon_id?: string
+          created_at?: string
+          detail?: string | null
+          event?: string
+          id?: never
+        }
+        Relationships: []
+      }
       app_usage: {
         Row: {
           anon_id: string
@@ -33,6 +57,7 @@ export type Database = {
           first_seen: string
           last_seen: string
           platform: string | null
+          source: string | null
         }
         Insert: {
           anon_id: string
@@ -40,6 +65,7 @@ export type Database = {
           first_seen?: string
           last_seen?: string
           platform?: string | null
+          source?: string | null
         }
         Update: {
           anon_id?: string
@@ -47,6 +73,7 @@ export type Database = {
           first_seen?: string
           last_seen?: string
           platform?: string | null
+          source?: string | null
         }
         Relationships: []
       }
@@ -395,6 +422,15 @@ export type Database = {
         Args: { p_anon_id: string; p_platform: string; p_version: string }
         Returns: undefined
       }
+      ping_usage_v2: {
+        Args: {
+          p_anon_id: string
+          p_platform: string
+          p_source: string
+          p_version: string
+        }
+        Returns: undefined
+      }
       publier_garde_auto: {
         Args: { p_a: string; p_de: string }
         Returns: {
@@ -419,6 +455,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      stats_marketing: { Args: never; Returns: Json }
       stats_usage: { Args: never; Returns: Json }
     }
     Enums: {
