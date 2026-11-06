@@ -9,7 +9,7 @@
 // garde_runs (statut, nb_importees, nb_inconnues, semaine_publiee, erreur) —
 // c'est la source de données de la routine superviseur quotidienne.
 //
-// Déclenchement : cron planifié (0 6,12,16,20 * * *) ou appel manuel HTTP.
+// Déclenchement : cron planifié (0 6,12,16,20 * * *) avec en-tête x-cron-secret.
 // Méthode : GET (pas de corps attendu).
 //
 // Variables d'environnement :
@@ -30,7 +30,7 @@ const ONPT_API =
 const MIN_PHARMACIES = 25; // slugs extraits minimum attendus de l'API
 const MAX_INCONNUS   = 5;  // slugs absents de notre annuaire tolérés
 
-Deno.serve(async (_req: Request): Promise<Response> => {
+Deno.serve(async (req: Request): Promise<Response> => {
   const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
   // Client Supabase créé tôt : nécessaire pour journaliser TOUS les cas,
@@ -66,18 +66,25 @@ Deno.serve(async (_req: Request): Promise<Response> => {
     }
   }
 
-  try {
-    if (!supabase) {
-      await envoyerAlerte(
-        "⚠️ PharmaGarde — Configuration Edge Function incomplète",
-        "Les variables SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY sont manquantes.",
-      );
-      return json(
-        { ok: false, error: "Variables SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquantes." },
-        500,
-      );
-    }
+  if (!supabase) {
+    return json(
+      { ok: false, error: "Variables SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquantes." },
+      500,
+    );
+  }
 
+  // Authentifier le cron avant tout import, journalisation ou alerte.
+  try {
+    const { data, error } = await supabase.rpc("verifier_secret_cron", {
+      p_secret: req.headers.get("x-cron-secret"),
+    });
+    if (error) return json({ ok: false }, 503);
+    if (data !== true) return json({ ok: false }, 401);
+  } catch {
+    return json({ ok: false }, 503);
+  }
+
+  try {
     const apiUrl =
       `${ONPT_API}&filters[a][$gte]=${today}&filters[de][$lte]=${today}`;
 
