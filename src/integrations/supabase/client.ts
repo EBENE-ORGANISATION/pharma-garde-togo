@@ -2,11 +2,13 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// Exportés pour les envois qui doivent survivre à la sortie de l'appli (fetch keepalive, cf. usage.ts).
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://qcbneizljzrgmvoraxat.supabase.co";
+export const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjYm5laXpsanpyZ212b3JheGF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODczNTcsImV4cCI6MjA5Njk2MzM1N30.TAQGWu1AHLTc5vONUek3BXFCgOh-1x63zZUyiiPs9DM";
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://qcbneizljzrgmvoraxat.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjYm5laXpsanpyZ212b3JheGF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODczNTcsImV4cCI6MjA5Njk2MzM1N30.TAQGWu1AHLTc5vONUek3BXFCgOh-1x63zZUyiiPs9DM";
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [

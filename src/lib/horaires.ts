@@ -64,10 +64,9 @@ export function useModeOuverture() {
   }, []);
 
   const mode = modeOuverture(now, joursFeries);
-  const libelle =
-    mode === "jour"
-      ? `${t("mode_open_until")} ${heureFermeture(now)}h`
-      : t("on_duty");
+  // Heure jusqu'à laquelle les pharmacies listées restent ouvertes : 20h / 13h le jour, 8h pour la garde.
+  const fermeture = mode === "jour" ? heureFermeture(now) : 8;
+  const libelle = mode === "jour" ? `${t("mode_open_until")} ${fermeture}h` : t("on_duty");
 
-  return { mode, libelle } as { mode: ModeOuverture; libelle: string };
+  return { mode, libelle, fermeture } as { mode: ModeOuverture; libelle: string; fermeture: number };
 }
