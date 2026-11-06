@@ -1,12 +1,15 @@
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 
 const KEY = "pg_anon_id";
 const DIAG_KEY = "pg_usage_diag";
 const SRC_KEY = "pg_src";
 const SRC_RE = /^[a-z0-9_-]{1,32}$/;
-let done = false;
+let started = false;
+let pinging = false;
+let lastPingAt = 0;
+const PING_INTERVAL_MS = 60 * 60 * 1000;
 let clicksInstalled = false;
 let lastSearchAt = 0;
 
@@ -67,10 +70,19 @@ async function nativeVersion(): Promise<string> {
   }
 }
 
+// Appelé au lancement puis à chaque retour au premier plan : au plus un ping réussi par heure,
+// et un ping en échec (hors-ligne) est retenté au retour suivant.
 export async function pingUsage() {
-  if (done) return;
-  done = true;
-  installClickTracking();
+  const first = !started;
+  if (first) {
+    started = true;
+    installClickTracking();
+    void App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) void pingUsage();
+    }).catch(() => undefined);
+  }
+  if (pinging || Date.now() - lastPingAt < PING_INTERVAL_MS) return;
+  pinging = true;
   try {
     const isNative = Capacitor.isNativePlatform();
     const platform = isNative ? "apk" : "web";
@@ -98,20 +110,36 @@ export async function pingUsage() {
     }
 
     if (error) saveDiag(`ÉCHEC — ${error.message} (code ${error.code ?? "?"})`);
-    else saveDiag(`OK — ${platform} / ${version} envoyé`);
+    else {
+      lastPingAt = Date.now();
+      saveDiag(`OK — ${platform} / ${version} envoyé`);
+    }
 
-    if (current) trackEvent("arrivee", current);
+    if (first && current) trackEvent("arrivee", current);
   } catch (e) {
     saveDiag(`EXCEPTION — ${e instanceof Error ? e.message : String(e)}`);
+  } finally {
+    pinging = false;
   }
 }
 
 // Envoi « tire et oublie » : une mesure perdue (hors-ligne) ne doit jamais gêner l'utilisateur.
+// fetch keepalive (et non supabase-js) : la requête survit à l'ouverture du composeur ou de Maps.
 export function trackEvent(event: UsageEvent, detail?: string) {
   try {
     const row: { anon_id: string; event: UsageEvent; detail?: string } = { anon_id: getAnonId(), event };
     if (detail && SRC_RE.test(detail)) row.detail = detail;
-    void supabase.from("app_events").insert(row).then(() => undefined, () => undefined);
+    void fetch(`${SUPABASE_URL}/rest/v1/app_events`, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify(row),
+    }).catch(() => undefined);
   } catch {
     // ignore
   }

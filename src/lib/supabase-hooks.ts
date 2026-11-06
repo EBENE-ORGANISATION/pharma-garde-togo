@@ -73,6 +73,8 @@ export function useEmergencies(zoneId: string | null) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
+    // Zone changée : on repart de zéro pour ne jamais montrer les numéros d'une autre zone.
+    setItems([]);
     setLoading(true);
     const db = getDb();
     const matches = (e: Emergency) =>
@@ -102,8 +104,10 @@ export function useEmergencies(zoneId: string | null) {
         query = zoneId
           ? query.or(`zone_id.is.null,zone_id.eq.${zoneId}`)
           : query.is("zone_id", null);
-        const { data } = await query;
+        const { data, error } = await query;
         if (cancelled) return;
+        // supabase-js ne lève pas d'exception hors-ligne : sans ce throw, le cache serait écrasé.
+        if (error) throw error;
         const fresh = (data ?? []) as Emergency[];
         setItems(fresh);
         if (db && fresh.length > 0) await db.emergencies.bulkPut(fresh);
@@ -131,6 +135,8 @@ export function usePharmacies(zoneId: string | null) {
       setLoading(false);
       return;
     }
+    // Zone changée : on repart de zéro pour ne jamais montrer la liste d'une autre zone.
+    setItems([]);
     setLoading(true);
     (async () => {
       // 1. cache-first
@@ -148,7 +154,7 @@ export function usePharmacies(zoneId: string | null) {
 
       // 2. zone snapshot (published by publier_zone), if available
       try {
-        const { data: snap } = await supabase
+        const { data: snap, error: snapError } = await supabase
           .from("snapshots")
           .select("zone_id, version, semaine, published_at, data")
           .eq("zone_id", zoneId)
@@ -156,6 +162,7 @@ export function usePharmacies(zoneId: string | null) {
           .limit(1)
           .maybeSingle();
         if (cancelled) return;
+        if (snapError) throw snapError;
         const snapPharmacies = (snap?.data as { pharmacies?: Pharmacy[] } | null)?.pharmacies;
         if (snap && Array.isArray(snapPharmacies)) {
           const fresh = [...snapPharmacies].sort(byNom);
@@ -183,13 +190,14 @@ export function usePharmacies(zoneId: string | null) {
 
       // 3. fallback: raw table query
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("pharmacies")
           .select("id, nom, adresse, telephone, latitude, longitude, zone_id")
           .eq("actif", true)
           .eq("zone_id", zoneId)
           .order("nom", { ascending: true });
         if (cancelled) return;
+        if (error) throw error;
         const fresh = (data ?? []) as Pharmacy[];
         setItems(fresh);
         if (db) {
@@ -263,6 +271,8 @@ export function useMedicineSearch(q: string) {
       setLoading(false);
       return;
     }
+    // Nouveau terme : on efface les résultats du précédent, même si le cache est indisponible.
+    setItems([]);
     setLoading(true);
     const db = getDb();
     const n = normalize(term);
@@ -287,13 +297,14 @@ export function useMedicineSearch(q: string) {
     const handle = setTimeout(async () => {
       try {
         const like = `%${term}%`;
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("medicaments")
           .select("id, nom_commercial, dci, forme, dosage")
           .or(`dci.ilike.${like},forme.ilike.${like},dosage.ilike.${like}`)
           .order("dci", { ascending: true })
           .limit(50);
         if (cancelled) return;
+        if (error) throw error;
         // client-side accent-insensitive refinement
         const filtered = ((data ?? []) as Medicine[]).filter((m) => matchesTerm(m, n));
         setItems(filtered);
@@ -333,10 +344,11 @@ export function useJoursFeries(): Set<string> {
 
       // 2. réseau
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("jours_feries")
           .select("date");
         if (cancelled) return;
+        if (error) throw error;
         const dates = (data ?? []).map((r: { date: string }) => r.date as string);
         setSet(new Set(dates));
         if (db) {
@@ -364,6 +376,8 @@ export function useAllPharmacies(zoneId: string | null) {
       setLoading(false);
       return;
     }
+    // Zone changée : on repart de zéro pour ne jamais montrer la liste d'une autre zone.
+    setItems([]);
     setLoading(true);
     (async () => {
       // 1. cache-first depuis db.annuaire
@@ -381,13 +395,14 @@ export function useAllPharmacies(zoneId: string | null) {
 
       // 2. réseau — table pharmacies complète, sans filtrage par snapshot
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("pharmacies")
           .select("id, nom, adresse, telephone, latitude, longitude, zone_id")
           .eq("actif", true)
           .eq("zone_id", zoneId)
           .order("nom", { ascending: true });
         if (cancelled) return;
+        if (error) throw error;
         const fresh = (data ?? []) as Pharmacy[];
         setItems(fresh);
         if (db) {

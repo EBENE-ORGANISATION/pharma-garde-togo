@@ -54,7 +54,7 @@ function Index() {
   const { t, lang } = useLang();
   const { zone, setZone } = useZone();
   const { zones, loading } = useZones();
-  const { mode, libelle } = useModeOuverture();
+  const { mode, libelle, fermeture } = useModeOuverture();
 
   const { items: gardePharmacies } = usePharmacies(zone || null);
   const { items: allPharmacies } = useAllPharmacies(zone || null);
@@ -321,7 +321,7 @@ function Index() {
                     {[
                       p.adresse,
                       km != null ? formatKm(km, lang) : null,
-                      `${t("open_until_short")} 8h`,
+                      `${t("open_until_short")} ${fermeture}h`,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
